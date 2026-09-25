@@ -1,84 +1,164 @@
 import random
 import time
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Álgebra Battle | Desafío Universitario",
-    page_icon="⚡",
+    page_title="CyberMath: Álgebra Overdrive",
+    page_icon="⚔️",
     layout="centered",
 )
 
-# Estilos CSS personalizados
+# Estilos CSS Cyberpunk / Neo-Arcade
 st.markdown(
     """
     <style>
-    .main { background: radial-gradient(circle at top, #20295a 0%, #090d1f 100%); color: #eef2ff; }
-    .stButton>button { width: 100%; border-radius: 12px; font-weight: bold; background-color: #1b2448; color: #eef2ff; border: 1px solid #303b68; }
-    .stButton>button:hover { border-color: #19d3ae; background-color: #223057; }
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+    
+    .stApp {
+        background: radial-gradient(circle at 50% 20%, #150d2a 0%, #07040d 100%);
+        font-family: 'Rajdhani', sans-serif;
+        color: #00f0ff;
+    }
+    
+    h1, h2, h3 {
+        font-family: 'Orbitron', sans-serif !important;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f;
+    }
+    
+    .stButton>button {
+        width: 100%;
+        border-radius: 8px;
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1f1135 0%, #0f081d 100%);
+        color: #00f0ff;
+        border: 2px solid #00f0ff;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .stButton>button:hover {
+        border-color: #ff007f;
+        color: #ffffff;
+        box-shadow: 0 0 20px rgba(255, 0, 127, 0.8);
+        transform: scale(1.02);
+    }
+    
+    .stat-card {
+        background: rgba(20, 10, 35, 0.8);
+        border: 1px solid #7928ca;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(121, 40, 202, 0.4);
+    }
+    
+    div[data-testid="stMetricValue"] {
+        font-family: 'Orbitron', sans-serif;
+        color: #ff007f !important;
+        text-shadow: 0 0 10px #ff007f;
+    }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
+# Módulo de Sonidos Synthetizados Web Audio API
+SFX_SCRIPT = """
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, duration) {
+    if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+    osc.stop(audioCtx.currentTime + duration);
+}
+
+function sfxCorrect() {
+    playTone(523.25, 'sine', 0.1);
+    setTimeout(() => playTone(659.25, 'sine', 0.15), 100);
+    setTimeout(() => playTone(783.99, 'sine', 0.3), 200);
+}
+
+function sfxWrong() {
+    playTone(180, 'sawtooth', 0.2);
+    setTimeout(() => playTone(110, 'sawtooth', 0.4), 150);
+}
+
+function sfxPowerup() {
+    playTone(400, 'triangle', 0.1);
+    setTimeout(() => playTone(800, 'triangle', 0.2), 80);
+}
+</script>
+"""
+
 QUESTION_BANK = [
     {
-        "topic": "Operaciones con reales",
+        "topic": "Operaciones Reales",
         "q": "Calcula: 18 − 3 × 4 + 2",
         "o": ["8", "14", "68", "2"],
         "a": 0,
-        "e": "Primero la multiplicación: 3 × 4 = 12. Luego 18 − 12 + 2 = 8.",
+        "e": "Prioridad: 3 × 4 = 12 ➔ 18 − 12 + 2 = 8.",
     },
     {
-        "topic": "Operaciones con reales",
+        "topic": "Operaciones Reales",
         "q": "Calcula: (−5)² − 3²",
         "o": ["−16", "16", "34", "−34"],
         "a": 1,
-        "e": "(−5)² = 25 y 3² = 9. Entonces 25 − 9 = 16.",
+        "e": "(−5)² = 25 y 3² = 9 ➔ 25 − 9 = 16.",
     },
     {
-        "topic": "Fracciones y potencias",
+        "topic": "Fracciones & Potencias",
         "q": "Calcula: 1/2 + 3/4",
         "o": ["4/6", "5/4", "7/8", "1/4"],
         "a": 1,
-        "e": "El común denominador es 4: 1/2 = 2/4. Entonces 2/4 + 3/4 = 5/4.",
+        "e": "Denominador común 4: 2/4 + 3/4 = 5/4.",
     },
     {
-        "topic": "Fracciones y potencias",
+        "topic": "Fracciones & Potencias",
         "q": "Simplifica: 2³ × 2²",
         "o": ["2⁵", "2⁶", "4⁵", "2¹"],
         "a": 0,
-        "e": (
-            "Al multiplicar potencias de la misma base se suman los"
-            " exponentes: 3 + 2 = 5."
-        ),
+        "e": "Bases iguales suman exponentes: 3 + 2 = 5.",
     },
     {
-        "topic": "Ecuaciones de primer grado",
+        "topic": "Ecuaciones I",
         "q": "Resuelve: 3x + 7 = 22",
         "o": ["x = 3", "x = 5", "x = 7", "x = 9"],
         "a": 1,
-        "e": "Resta 7: 3x = 15. Divide entre 3: x = 5.",
+        "e": "3x = 15 ➔ x = 5.",
     },
     {
-        "topic": "Ecuaciones de primer grado",
+        "topic": "Ecuaciones I",
         "q": "Resuelve: 5(x − 2) = 20",
         "o": ["x = 2", "x = 4", "x = 6", "x = 8"],
         "a": 2,
-        "e": "Divide entre 5: x − 2 = 4. Suma 2: x = 6.",
+        "e": "x − 2 = 4 ➔ x = 6.",
     },
     {
-        "topic": "Productos notables",
-        "q": "¿Cuál es el desarrollo de (x + 3)²?",
+        "topic": "Productos Notables",
+        "q": "Desarrollo de: (x + 3)²",
         "o": ["x² + 9", "x² + 3x + 9", "x² + 6x + 9", "x² + 6x + 3"],
         "a": 2,
-        "e": "Cuadrado de una suma: x² + 2·x·3 + 3² = x² + 6x + 9.",
+        "e": "Binomio al cuadrado: x² + 2(3)x + 3².",
     },
     {
-        "topic": "Productos notables",
+        "topic": "Productos Notables",
         "q": "Desarrolla: (a − 4)(a + 4)",
         "o": ["a² − 16", "a² + 16", "a² − 8a + 16", "a² + 8a + 16"],
         "a": 0,
-        "e": "Es una diferencia de cuadrados: a² − 4² = a² − 16.",
+        "e": "Diferencia de cuadrados: a² − 16.",
     },
     {
         "topic": "Factorización",
@@ -90,132 +170,61 @@ QUESTION_BANK = [
             "(x+5)(x+1)",
         ],
         "a": 1,
-        "e": "Buscamos dos números que sumen 5 y multipliquen 6: 2 y 3.",
+        "e": "Números que sumados den 5 y multiplicados 6: (x+2)(x+3).",
     },
     {
-        "topic": "Factorización",
-        "q": "Factor común: 6x² + 9x",
-        "o": ["3x(2x+3)", "6x(x+9)", "x(6x+9x)", "3(2x²+9x)"],
-        "a": 0,
-        "e": "El máximo factor común es 3x: 3x(2x + 3).",
-    },
-    {
-        "topic": "Ecuaciones cuadráticas",
-        "q": "Resuelve: x² − 9 = 0",
-        "o": ["x = 3 solamente", "x = −3 solamente", "x = ±3", "x = 9"],
-        "a": 2,
-        "e": "x² = 9, por lo tanto x = 3 o x = −3.",
-    },
-    {
-        "topic": "Ecuaciones cuadráticas",
+        "topic": "Ecuaciones Cuadráticas",
         "q": "En x² − 5x + 6 = 0, las raíces son:",
         "o": ["1 y 6", "2 y 3", "−2 y −3", "0 y 6"],
         "a": 1,
-        "e": "Factorizamos: (x − 2)(x − 3) = 0. Las raíces son 2 y 3.",
-    },
-    {
-        "topic": "Inecuaciones",
-        "q": "Resuelve: 2x + 4 > 10",
-        "o": ["x > 3", "x < 3", "x > 7", "x < 7"],
-        "a": 0,
-        "e": "Resta 4: 2x > 6. Divide entre 2: x > 3.",
-    },
-    {
-        "topic": "Inecuaciones",
-        "q": "Al multiplicar una desigualdad por un número negativo:",
-        "o": [
-            "No cambia el signo",
-            "Se invierte el signo",
-            "Se elimina la variable",
-            "Siempre se vuelve igualdad",
-        ],
-        "a": 1,
-        "e": (
-            "Al multiplicar o dividir por un número negativo, el sentido de la"
-            " desigualdad se invierte."
-        ),
-    },
-    {
-        "topic": "Radicales",
-        "q": "Simplifica √49",
-        "o": ["6", "7", "14", "24"],
-        "a": 1,
-        "e": "7 × 7 = 49, por eso √49 = 7.",
-    },
-    {
-        "topic": "Radicales",
-        "q": "Simplifica √50",
-        "o": ["5√2", "2√5", "10√5", "25√2"],
-        "a": 0,
-        "e": "√50 = √(25·2) = 5√2.",
-    },
-    {
-        "topic": "Funciones básicas",
-        "q": "Si f(x) = 2x + 1, calcula f(3)",
-        "o": ["5", "6", "7", "8"],
-        "a": 2,
-        "e": "Sustituye x = 3: f(3) = 2(3) + 1 = 7.",
-    },
-    {
-        "topic": "Funciones básicas",
-        "q": "En y = 3x − 2, la pendiente es:",
-        "o": ["−2", "2", "3", "−3"],
-        "a": 2,
-        "e": "En y = mx + b, m es la pendiente. Aquí m = 3.",
+        "e": "Factorización: (x−2)(x−3) = 0 ➔ x = 2, x = 3.",
     },
 ]
 
-# Inicialización de variables de estado
+# Estado del sistema
 if "screen" not in st.session_state:
   st.session_state.screen = "home"
 if "player_name" not in st.session_state:
-  st.session_state.player_name = "Jugador"
+  st.session_state.player_name = "CyberRunner"
 if "score" not in st.session_state:
   st.session_state.score = 0
 if "streak" not in st.session_state:
   st.session_state.streak = 0
-if "best_streak" not in st.session_state:
-  st.session_state.best_streak = 0
-if "lives" not in st.session_state:
-  st.session_state.lives = 3
+if "player_hp" not in st.session_state:
+  st.session_state.player_hp = 100
+if "boss_hp" not in st.session_state:
+  st.session_state.boss_hp = 100
 if "q_index" not in st.session_state:
   st.session_state.q_index = 0
 if "questions" not in st.session_state:
   st.session_state.questions = []
 if "answered" not in st.session_state:
   st.session_state.answered = False
-if "correct_count" not in st.session_state:
-  st.session_state.correct_count = 0
 if "ranking" not in st.session_state:
   st.session_state.ranking = []
-if "start_time" not in st.session_state:
-  st.session_state.start_time = time.time()
-if "music_enabled" not in st.session_state:
-  st.session_state.music_enabled = True
 
-# Reproductor de música de fondo en la barra lateral
-with st.sidebar:
-  st.header("🎵 Audio & Ajustes")
-  st.session_state.music_enabled = st.checkbox(
-      "Música de fondo", value=st.session_state.music_enabled
-  )
-  if st.session_state.music_enabled:
-    # Música libre de derechos (Arcade / Retro Loop)
-    audio_url = (
-        "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3"
-    )
-    st.components.v1.html(
-        f"""
-        <audio autoplay loop id="bg-music">
-            <source src="{audio_url}" type="audio/mpeg">
-        </audio>
-        <script>
-            var audio = document.getElementById("bg-music");
-            audio.volume = 0.3; // Volumen moderado
-        </script>
-        """,
-        height=0,
-    )
+# Power-ups
+if "shield" not in st.session_state:
+  st.session_state.shield = False
+if "time_freeze" not in st.session_state:
+  st.session_state.time_freeze = False
+if "disabled_options" not in st.session_state:
+  st.session_state.disabled_options = []
+
+# Música e integración SFX
+components.html(
+    f"""
+    {SFX_SCRIPT}
+    <audio id="bg-music" loop autoplay>
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
+    </audio>
+    <script>
+        var audio = document.getElementById("bg-music");
+        audio.volume = 0.2;
+    </script>
+""",
+    height=0,
+)
 
 
 def start_game():
@@ -225,12 +234,26 @@ def start_game():
   st.session_state.q_index = 0
   st.session_state.score = 0
   st.session_state.streak = 0
-  st.session_state.best_streak = 0
-  st.session_state.lives = 3
-  st.session_state.correct_count = 0
+  st.session_state.player_hp = 100
+  st.session_state.boss_hp = 100
+  st.session_state.shield = False
+  st.session_state.time_freeze = False
+  st.session_state.disabled_options = []
   st.session_state.answered = False
   st.session_state.start_time = time.time()
   st.session_state.screen = "game"
+
+
+def apply_powerup(kind):
+  components.html(f"{SFX_SCRIPT}<script>sfxPowerup();</script>", height=0)
+  if kind == "shield":
+    st.session_state.shield = True
+  elif kind == "freeze":
+    st.session_state.time_freeze = True
+  elif kind == "bomb":
+    q = st.session_state.questions[st.session_state.q_index]
+    wrong = [i for i in range(len(q["o"])) if i != q["a"]]
+    st.session_state.disabled_options = random.sample(wrong, 2)
 
 
 def check_answer(opt_idx, timeout=False):
@@ -239,40 +262,42 @@ def check_answer(opt_idx, timeout=False):
   st.session_state.answered = True
   q = st.session_state.questions[st.session_state.q_index]
 
-  if timeout:
-    st.session_state.lives -= 1
-    st.session_state.streak = 0
-    st.session_state.last_result = "timeout"
-  elif opt_idx == q["a"]:
-    st.session_state.correct_count += 1
-    st.session_state.streak += 1
-    st.session_state.best_streak = max(
-        st.session_state.best_streak, st.session_state.streak
-    )
-    # Bonificación por racha
-    st.session_state.score += 100 + (st.session_state.streak * 20)
-    st.session_state.last_result = "correct"
+  if timeout or opt_idx != q["a"]:
+    if st.session_state.shield:
+      st.session_state.shield = False
+      st.session_state.last_result = "shield_absorbed"
+      components.html(
+          f"{SFX_SCRIPT}<script>sfxPowerup();</script>", height=0
+      )
+    else:
+      components.html(f"{SFX_SCRIPT}<script>sfxWrong();</script>", height=0)
+      st.session_state.player_hp -= 35
+      st.session_state.streak = 0
+      st.session_state.last_result = "timeout" if timeout else "wrong"
   else:
-    st.session_state.lives -= 1
-    st.session_state.streak = 0
-    st.session_state.last_result = "wrong"
+    components.html(f"{SFX_SCRIPT}<script>sfxCorrect();</script>", height=0)
+    st.session_state.streak += 1
+    damage = 10 + (st.session_state.streak * 5)
+    st.session_state.boss_hp = max(0, st.session_state.boss_hp - damage)
+    st.session_state.score += 150 + (st.session_state.streak * 30)
+    st.session_state.last_result = "correct"
 
 
 def next_question():
   st.session_state.answered = False
+  st.session_state.time_freeze = False
+  st.session_state.disabled_options = []
   st.session_state.q_index += 1
+
   if (
       st.session_state.q_index >= len(st.session_state.questions)
-      or st.session_state.lives <= 0
+      or st.session_state.player_hp <= 0
+      or st.session_state.boss_hp <= 0
   ):
-    pct = int(
-        (st.session_state.correct_count / len(st.session_state.questions))
-        * 100
-    )
     st.session_state.ranking.append({
         "name": st.session_state.player_name,
         "score": st.session_state.score,
-        "pct": pct,
+        "victory": st.session_state.boss_hp <= 0,
     })
     st.session_state.ranking = sorted(
         st.session_state.ranking, key=lambda x: x["score"], reverse=True
@@ -282,117 +307,138 @@ def next_question():
     st.session_state.start_time = time.time()
 
 
-st.title("⚡ ÁLGEBRA BATTLE")
-st.caption("Matemática universitaria · Desafío de preguntas")
+st.title("⚔️ CYBERMATH: OVERDRIVE")
+st.caption("Sistema de Inteligencia Matemática · Modo Combate")
 
-# PANTALLA INICIAL
+# INICIO
 if st.session_state.screen == "home":
-  st.subheader("🎓⚔️🧮 Desafío Universitario")
-  st.write(
-      "Resuelve retos de álgebra antes de que se agote el tiempo (15s por"
-      " pregunta)."
+  st.subheader("🤖 DESAFÍO CONTRA EL NÚCLEO")
+  st.write("Derrota al Boss del sistema resolviendo ecuaciones complejas.")
+  st.session_state.player_name = st.text_input(
+      "Identificador de Usuario:", value=st.session_state.player_name
   )
-  player_input = st.text_input(
-      "Nombre del jugador:", value=st.session_state.player_name
-  )
-  if player_input:
-    st.session_state.player_name = player_input
 
-  col1, col2 = st.columns(2)
-  with col1:
-    if st.button("🚀 Iniciar desafío"):
+  c1, c2 = st.columns(2)
+  with c1:
+    if st.button("🚀 INICIAR COMBATE"):
       start_game()
       st.rerun()
-  with col2:
-    if st.button("🏆 Ver ranking"):
+  with c2:
+    if st.button("🏆 TABLA DE HONORES"):
       st.session_state.screen = "ranking"
       st.rerun()
 
-# PANTALLA DE JUEGO
+# JUEGO
 elif st.session_state.screen == "game":
-  c1, c2, c3, c4 = st.columns(4)
-  c1.metric("Puntos", st.session_state.score)
-  c2.metric("Racha 🔥", st.session_state.streak)
-  c3.metric(
-      "Vidas",
-      "❤️" * st.session_state.lives + "🖤" * (3 - st.session_state.lives),
-  )
-  c4.metric(
-      "Progreso",
-      f"{st.session_state.q_index + 1}/{len(st.session_state.questions)}",
-  )
+  # Barra de estado de Combate
+  col_hp1, col_hp2 = st.columns(2)
+  with col_hp1:
+    st.write(f"💙 **Jugador HP:** {st.session_state.player_hp}%")
+    st.progress(max(0, st.session_state.player_hp) / 100)
+  with col_hp2:
+    st.write(f"👾 **Boss HP:** {st.session_state.boss_hp}%")
+    st.progress(max(0, st.session_state.boss_hp) / 100)
 
-  # Temporizador (15 segundos)
+  m1, m2, m3 = st.columns(3)
+  m1.metric("Puntuación", st.session_state.score)
+  m2.metric("Multiplicador", f"x{st.session_state.streak + 1}")
+  m3.metric("Protección", "🛡️ ACTIVA" if st.session_state.shield else "NINGUNA")
+
+  # Habilidades / Power-Ups
+  st.write("---")
+  p1, p2, p3 = st.columns(3)
+  if p1.button(
+      "🛡️ Escudo",
+      disabled=st.session_state.shield or st.session_state.answered,
+  ):
+    apply_powerup("shield")
+    st.rerun()
+  if p2.button(
+      "⚡ Congelar",
+      disabled=st.session_state.time_freeze or st.session_state.answered,
+  ):
+    apply_powerup("freeze")
+    st.rerun()
+  if p3.button(
+      "💣 50/50",
+      disabled=len(st.session_state.disabled_options) > 0
+      or st.session_state.answered,
+  ):
+    apply_powerup("bomb")
+    st.rerun()
+
+  # Temporizador
   TIME_LIMIT = 15
-  elapsed_time = time.time() - st.session_state.start_time
-  remaining_time = max(0, int(TIME_LIMIT - elapsed_time))
-
-  if not st.session_state.answered:
-    progress = remaining_time / TIME_LIMIT
-    st.progress(progress, text=f"⏱️ Tiempo restante: {remaining_time}s")
-
-    if remaining_time == 0:
+  if not st.session_state.answered and not st.session_state.time_freeze:
+    elapsed = time.time() - st.session_state.start_time
+    remaining = max(0, int(TIME_LIMIT - elapsed))
+    st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo: {remaining}s")
+    if remaining == 0:
       check_answer(None, timeout=True)
       st.rerun()
+  elif st.session_state.time_freeze and not st.session_state.answered:
+    st.info("⚡ ¡TIEMPO CONGELADO EN ESTA PREGUNTA!")
 
   st.divider()
   q = st.session_state.questions[st.session_state.q_index]
-  st.caption(f"Categoría: **{q['topic']}**")
+  st.caption(f"Módulo: **{q['topic']}**")
   st.markdown(f"### {q['q']}")
 
+  # Botones de Opciones
   for idx, opt in enumerate(q["o"]):
-    label = f"{chr(65 + idx)}) {opt}"
-    if st.button(
-        label, key=f"opt_{idx}", disabled=st.session_state.answered
-    ):
-      check_answer(idx)
-      st.rerun()
+    if idx in st.session_state.disabled_options:
+      st.button(f"🚫 {opt}", key=f"opt_{idx}", disabled=True)
+    else:
+      if st.button(
+          f"{chr(65+idx)}) {opt}",
+          key=f"opt_{idx}",
+          disabled=st.session_state.answered,
+      ):
+        check_answer(idx)
+        st.rerun()
 
   if st.session_state.answered:
     if st.session_state.last_result == "correct":
-      st.success(f"✅ **¡Correcto!**\n\n{q['e']}")
-    elif st.session_state.last_result == "timeout":
-      st.warning(
-          f"⏰ **¡Tiempo agotado!** Respuesta correcta: **{q['o'][q['a']]}**\n\n{q['e']}"
-      )
+      st.success(f"💥 **¡Impacto Directo!**\n\n{q['e']}")
+    elif st.session_state.last_result == "shield_absorbed":
+      st.info(f"🛡️ **¡Escudo Absorbió el Golpe!**\n\n{q['e']}")
     else:
       st.error(
-          f"❌ **Incorrecto.** Respuesta correcta: **{q['o'][q['a']]}**\n\n{q['e']}"
+          f"⚡ **¡Ataque Recibido!** Respuesta correcta: **{q['o'][q['a']]}**\n\n{q['e']}"
       )
 
-    if st.button("Siguiente pregunta ➜"):
+    if st.button("Siguiente Ronda ➔"):
       next_question()
       st.rerun()
 
-# PANTALLA DE RESULTADOS
+# RESULTADO
 elif st.session_state.screen == "result":
-  st.subheader("🏆 ¡Desafío completado!")
-  pct = int(
-      (st.session_state.correct_count / len(st.session_state.questions)) * 100
-  )
-  res_c1, res_c2, res_c3 = st.columns(3)
-  res_c1.metric("Puntuación Final", st.session_state.score)
-  res_c2.metric("Precisión", f"{pct}%")
-  res_c3.metric("Mejor Racha", st.session_state.best_streak)
+  if st.session_state.boss_hp <= 0:
+    st.balloons()
+    st.title("🎉 ¡SISTEMA PURGADO! (VICTORIA)")
+  else:
+    st.title("💀 ¡INFILTRACIÓN FALLIDA! (GAME OVER)")
 
-  btn_col1, btn_col2 = st.columns(2)
-  with btn_col1:
-    if st.button("🔁 Jugar otra vez"):
-      start_game()
-      st.rerun()
-  with btn_col2:
-    if st.button("🏆 Ver ranking"):
-      st.session_state.screen = "ranking"
-      st.rerun()
+  r1, r2 = st.columns(2)
+  r1.metric("Puntuación Final", st.session_state.score)
+  r2.metric("Salud del Boss Restante", f"{st.session_state.boss_hp}%")
 
-# PANTALLA DE RANKING
+  c1, c2 = st.columns(2)
+  if c1.button("🔁 Reiniciar Sistema"):
+    start_game()
+    st.rerun()
+  if c2.button("🏆 Ver Salón de la Fama"):
+    st.session_state.screen = "ranking"
+    st.rerun()
+
+# RANKING
 elif st.session_state.screen == "ranking":
-  st.subheader("🏆 Ranking General")
+  st.subheader("🏆 SALÓN DE LA FAMA")
   if st.session_state.ranking:
     st.table(st.session_state.ranking)
   else:
-    st.info("Aún no hay puntuaciones registradas.")
+    st.info("Sin registros en la base de datos.")
 
-  if st.button("Volver al Inicio"):
+  if st.button("Volver a la Base"):
     st.session_state.screen = "home"
     st.rerun()
