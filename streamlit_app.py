@@ -1,72 +1,82 @@
+import os
 import random
 import time
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="CyberMath: Álgebra Overdrive",
-    page_icon="⚔️",
+    page_title="Álgebra Master | Desafío Matemático",
+    page_icon="🧮",
     layout="centered",
 )
 
-# Estilos CSS Cyberpunk / Neo-Arcade
+# Estilos CSS con colores vibrantes y legibles
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
     
     .stApp {
-        background: radial-gradient(circle at 50% 20%, #150d2a 0%, #07040d 100%);
-        font-family: 'Rajdhani', sans-serif;
-        color: #00f0ff;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        font-family: 'Poppins', sans-serif;
+        color: #f8fafc;
     }
     
     h1, h2, h3 {
-        font-family: 'Orbitron', sans-serif !important;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 0 10px #ff007f, 0 0 20px #ff007f;
+        font-family: 'Poppins', sans-serif !important;
+        font-weight: 800;
+        letter-spacing: 1px;
     }
     
     .stButton>button {
         width: 100%;
-        border-radius: 8px;
-        font-family: 'Orbitron', sans-serif;
-        font-weight: 700;
-        background: linear-gradient(135deg, #1f1135 0%, #0f081d 100%);
-        color: #00f0ff;
-        border: 2px solid #00f0ff;
-        box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        border-radius: 10px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        background-color: #334155;
+        color: #f8fafc;
+        border: 2px solid #38bdf8;
         transition: all 0.2s ease-in-out;
     }
     
     .stButton>button:hover {
-        border-color: #ff007f;
+        border-color: #4ade80;
+        background-color: #1e293b;
         color: #ffffff;
-        box-shadow: 0 0 20px rgba(255, 0, 127, 0.8);
-        transform: scale(1.02);
-    }
-    
-    .stat-card {
-        background: rgba(20, 10, 35, 0.8);
-        border: 1px solid #7928ca;
-        padding: 15px;
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 0 15px rgba(121, 40, 202, 0.4);
-    }
-    
-    div[data-testid="stMetricValue"] {
-        font-family: 'Orbitron', sans-serif;
-        color: #ff007f !important;
-        text-shadow: 0 0 10px #ff007f;
+        transform: scale(1.01);
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Módulo de Sonidos Synthetizados Web Audio API
+# Archivo local para persistir los datos de los participantes
+RANKING_FILE = "ranking_matematica.csv"
+
+
+def cargar_ranking():
+  if os.path.exists(RANKING_FILE):
+    try:
+      return pd.read_csv(RANKING_FILE)
+    except Exception:
+      return pd.DataFrame(columns=["Nombre", "Puntaje", "Resultado"])
+  return pd.DataFrame(columns=["Nombre", "Puntaje", "Resultado"])
+
+
+def guardar_participante(nombre, puntaje, victoria):
+  df = cargar_ranking()
+  nuevo_registro = pd.DataFrame([{
+      "Nombre": nombre,
+      "Puntaje": puntaje,
+      "Resultado": "Ganador 🏆" if victoria else "Finalizado ⏹️",
+  }])
+  df = pd.concat([df, nuevo_registro], ignore_index=True)
+  df = df.sort_values(by="Puntaje", ascending=False).reset_index(drop=True)
+  df.to_csv(RANKING_FILE, index=False)
+
+
+# Sonidos Web Audio API
 SFX_SCRIPT = """
 <script>
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -133,14 +143,14 @@ QUESTION_BANK = [
         "e": "Bases iguales suman exponentes: 3 + 2 = 5.",
     },
     {
-        "topic": "Ecuaciones I",
+        "topic": "Ecuaciones de Primer Grado",
         "q": "Resuelve: 3x + 7 = 22",
         "o": ["x = 3", "x = 5", "x = 7", "x = 9"],
         "a": 1,
         "e": "3x = 15 ➔ x = 5.",
     },
     {
-        "topic": "Ecuaciones I",
+        "topic": "Ecuaciones de Primer Grado",
         "q": "Resuelve: 5(x − 2) = 20",
         "o": ["x = 2", "x = 4", "x = 6", "x = 8"],
         "a": 2,
@@ -181,11 +191,11 @@ QUESTION_BANK = [
     },
 ]
 
-# Estado del sistema
+# Estado inicial del juego
 if "screen" not in st.session_state:
   st.session_state.screen = "home"
 if "player_name" not in st.session_state:
-  st.session_state.player_name = "CyberRunner"
+  st.session_state.player_name = "Estudiante"
 if "score" not in st.session_state:
   st.session_state.score = 0
 if "streak" not in st.session_state:
@@ -200,10 +210,8 @@ if "questions" not in st.session_state:
   st.session_state.questions = []
 if "answered" not in st.session_state:
   st.session_state.answered = False
-if "ranking" not in st.session_state:
-  st.session_state.ranking = []
 
-# Power-ups
+# Comodines
 if "shield" not in st.session_state:
   st.session_state.shield = False
 if "time_freeze" not in st.session_state:
@@ -211,7 +219,7 @@ if "time_freeze" not in st.session_state:
 if "disabled_options" not in st.session_state:
   st.session_state.disabled_options = []
 
-# Música e integración SFX
+# Reproductor de música de fondo
 components.html(
     f"""
     {SFX_SCRIPT}
@@ -220,7 +228,7 @@ components.html(
     </audio>
     <script>
         var audio = document.getElementById("bg-music");
-        audio.volume = 0.2;
+        audio.volume = 0.15;
     </script>
 """,
     height=0,
@@ -294,58 +302,59 @@ def next_question():
       or st.session_state.player_hp <= 0
       or st.session_state.boss_hp <= 0
   ):
-    st.session_state.ranking.append({
-        "name": st.session_state.player_name,
-        "score": st.session_state.score,
-        "victory": st.session_state.boss_hp <= 0,
-    })
-    st.session_state.ranking = sorted(
-        st.session_state.ranking, key=lambda x: x["score"], reverse=True
-    )[:10]
+    # Guardar automáticamente los datos del participante en archivo local
+    guardar_participante(
+        st.session_state.player_name,
+        st.session_state.score,
+        st.session_state.boss_hp <= 0,
+    )
     st.session_state.screen = "result"
   else:
     st.session_state.start_time = time.time()
 
 
-st.title("⚔️ CYBERMATH: OVERDRIVE")
-st.caption("Sistema de Inteligencia Matemática · Modo Combate")
+# ENCABEZADO
+st.title("🧮 ÁLGEBRA MASTER")
+st.caption("Desafío Educativo de Matemática Universitaria")
 
-# INICIO
+# PANTALLA INICIAL
 if st.session_state.screen == "home":
-  st.subheader("🤖 DESAFÍO CONTRA EL NÚCLEO")
-  st.write("Derrota al Boss del sistema resolviendo ecuaciones complejas.")
+  st.subheader("📝 Registro de Participante")
+  st.write(
+      "Pon a prueba tus habilidades matemáticas en este reto interactivo."
+  )
   st.session_state.player_name = st.text_input(
-      "Identificador de Usuario:", value=st.session_state.player_name
+      "Ingresa tu Nombre / Nombre de Participante:",
+      value=st.session_state.player_name,
   )
 
   c1, c2 = st.columns(2)
   with c1:
-    if st.button("🚀 INICIAR COMBATE"):
+    if st.button("🚀 Iniciar Reto"):
       start_game()
       st.rerun()
   with c2:
-    if st.button("🏆 TABLA DE HONORES"):
+    if st.button("🏆 Tabla de Participantes"):
       st.session_state.screen = "ranking"
       st.rerun()
 
-# JUEGO
+# PANTALLA DE JUEGO
 elif st.session_state.screen == "game":
-  # Barra de estado de Combate
   col_hp1, col_hp2 = st.columns(2)
   with col_hp1:
-    st.write(f"💙 **Jugador HP:** {st.session_state.player_hp}%")
+    st.write(f"❤️ **Vida del Participante:** {st.session_state.player_hp}%")
     st.progress(max(0, st.session_state.player_hp) / 100)
   with col_hp2:
-    st.write(f"👾 **Boss HP:** {st.session_state.boss_hp}%")
+    st.write(f"🎯 **Progreso del Reto:** {st.session_state.boss_hp}%")
     st.progress(max(0, st.session_state.boss_hp) / 100)
 
   m1, m2, m3 = st.columns(3)
   m1.metric("Puntuación", st.session_state.score)
-  m2.metric("Multiplicador", f"x{st.session_state.streak + 1}")
-  m3.metric("Protección", "🛡️ ACTIVA" if st.session_state.shield else "NINGUNA")
+  m2.metric("Racha Rápida", f"x{st.session_state.streak + 1}")
+  m3.metric("Escudo", "🛡️ ACTIVO" if st.session_state.shield else "INACTIVO")
 
-  # Habilidades / Power-Ups
   st.write("---")
+  st.caption("Comodines disponibles:")
   p1, p2, p3 = st.columns(3)
   if p1.button(
       "🛡️ Escudo",
@@ -354,13 +363,13 @@ elif st.session_state.screen == "game":
     apply_powerup("shield")
     st.rerun()
   if p2.button(
-      "⚡ Congelar",
+      "⚡ Congelar Tiempo",
       disabled=st.session_state.time_freeze or st.session_state.answered,
   ):
     apply_powerup("freeze")
     st.rerun()
   if p3.button(
-      "💣 50/50",
+      "💣 50 / 50",
       disabled=len(st.session_state.disabled_options) > 0
       or st.session_state.answered,
   ):
@@ -372,19 +381,19 @@ elif st.session_state.screen == "game":
   if not st.session_state.answered and not st.session_state.time_freeze:
     elapsed = time.time() - st.session_state.start_time
     remaining = max(0, int(TIME_LIMIT - elapsed))
-    st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo: {remaining}s")
+    st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
     if remaining == 0:
       check_answer(None, timeout=True)
       st.rerun()
   elif st.session_state.time_freeze and not st.session_state.answered:
-    st.info("⚡ ¡TIEMPO CONGELADO EN ESTA PREGUNTA!")
+    st.info("⚡ ¡TIEMPO CONGELADO PARA ESTA PREGUNTA!")
 
   st.divider()
   q = st.session_state.questions[st.session_state.q_index]
-  st.caption(f"Módulo: **{q['topic']}**")
+  st.caption(f"Tema: **{q['topic']}**")
   st.markdown(f"### {q['q']}")
 
-  # Botones de Opciones
+  # Opciones
   for idx, opt in enumerate(q["o"]):
     if idx in st.session_state.disabled_options:
       st.button(f"🚫 {opt}", key=f"opt_{idx}", disabled=True)
@@ -397,48 +406,57 @@ elif st.session_state.screen == "game":
         check_answer(idx)
         st.rerun()
 
+  # Muestra de resultados diferenciados por colores
   if st.session_state.answered:
     if st.session_state.last_result == "correct":
-      st.success(f"💥 **¡Impacto Directo!**\n\n{q['e']}")
+      st.success(f"✅ **¡Respuesta Correcta!**\n\n{q['e']}")
     elif st.session_state.last_result == "shield_absorbed":
-      st.info(f"🛡️ **¡Escudo Absorbió el Golpe!**\n\n{q['e']}")
+      st.info(f"🛡️ **¡Escudo Activado! Se evitó la penalización.**\n\n{q['e']}")
+    elif st.session_state.last_result == "timeout":
+      st.error(
+          f"❌ **¡Tiempo Agotado!** La respuesta correcta era:"
+          f" **{q['o'][q['a']]}**\n\n{q['e']}"
+      )
     else:
       st.error(
-          f"⚡ **¡Ataque Recibido!** Respuesta correcta: **{q['o'][q['a']]}**\n\n{q['e']}"
+          f"❌ **Respuesta Incorrecta.** La respuesta correcta era:"
+          f" **{q['o'][q['a']]}**\n\n{q['e']}"
       )
 
-    if st.button("Siguiente Ronda ➔"):
+    if st.button("Siguiente Pregunta ➔"):
       next_question()
       st.rerun()
 
-# RESULTADO
+# PANTALLA DE RESULTADOS
 elif st.session_state.screen == "result":
   if st.session_state.boss_hp <= 0:
     st.balloons()
-    st.title("🎉 ¡SISTEMA PURGADO! (VICTORIA)")
+    st.title("🎉 ¡FELICITACIONES! DESAFÍO SUPERADO")
   else:
-    st.title("💀 ¡INFILTRACIÓN FALLIDA! (GAME OVER)")
+    st.title("FIN DEL INTENTO")
 
   r1, r2 = st.columns(2)
   r1.metric("Puntuación Final", st.session_state.score)
-  r2.metric("Salud del Boss Restante", f"{st.session_state.boss_hp}%")
+  r2.metric("Participante", st.session_state.player_name)
 
   c1, c2 = st.columns(2)
-  if c1.button("🔁 Reiniciar Sistema"):
+  if c1.button("🔁 Intentar de Nuevo"):
     start_game()
     st.rerun()
-  if c2.button("🏆 Ver Salón de la Fama"):
+  if c2.button("🏆 Ver Registro de Participantes"):
     st.session_state.screen = "ranking"
     st.rerun()
 
-# RANKING
+# PANTALLA DE RANKING (TABLA GUARDADA)
 elif st.session_state.screen == "ranking":
-  st.subheader("🏆 SALÓN DE LA FAMA")
-  if st.session_state.ranking:
-    st.table(st.session_state.ranking)
-  else:
-    st.info("Sin registros en la base de datos.")
+  st.subheader("🏆 Registro de Participantes")
+  df_ranking = cargar_ranking()
 
-  if st.button("Volver a la Base"):
+  if not df_ranking.empty:
+    st.dataframe(df_ranking, use_container_width=True)
+  else:
+    st.info("Aún no hay participantes registrados.")
+
+  if st.button("Volver al Inicio"):
     st.session_state.screen = "home"
     st.rerun()
