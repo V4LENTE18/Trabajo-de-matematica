@@ -11,7 +11,7 @@ st.set_page_config(
     layout="centered",
 )
 
-# Estilos CSS con contraste visual elevado
+# Estilos CSS
 st.markdown(
     """
     <style>
@@ -51,7 +51,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Persistencia local de participantes
+# Persistencia local de ranking
 RANKING_FILE = "ranking_matematica.csv"
 
 
@@ -76,7 +76,7 @@ def guardar_participante(nombre, puntaje, victoria):
   df.to_csv(RANKING_FILE, index=False)
 
 
-# Efectos de Sonido Web Audio API
+# Efectos de Sonido
 SFX_SCRIPT = """
 <script>
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -113,9 +113,7 @@ function sfxPowerup() {
 </script>
 """
 
-# BANCO COMPLETO DE PREGUNTAS (Incluye los ejercicios obligatorios + adicionales complejos)
 QUESTION_BANK = [
-    # Preguntas exactas requeridas
     {
         "topic": "Ecuación Lineal",
         "q": "Determina el valor de x:\n\n$$4(2x - 3) - 3(x + 2) = 2x + 7$$",
@@ -220,7 +218,7 @@ QUESTION_BANK = [
         ),
     },
     {
-        "topic": "Ecuación Irregional",
+        "topic": "Ecuación Irracional",
         "q": "Resuelve:\n\n$$\\sqrt{x + 6} = x$$",
         "o": ["x = 2", "x = 3", "x = 4", "x = 6"],
         "a": 1,
@@ -234,7 +232,7 @@ QUESTION_BANK = [
         ),
     },
     {
-        "topic": "Reto Final — Ecuación Irracial",
+        "topic": "Reto Final — Ecuación Irracional",
         "q": "Determina la solución válida:\n\n$$\\sqrt{x + 4} + \\sqrt{x} = 4$$",
         "o": ["x = 1", "x = 9/4", "x = 3", "x = 4"],
         "a": 1,
@@ -247,44 +245,9 @@ QUESTION_BANK = [
             " lo tanto: **x = 9/4**."
         ),
     },
-    # Adicionales de alta dificultad para banco expandido
-    {
-        "topic": "Ecuación Fraccionaria Avanzada",
-        "q": (
-            "Encuentra las soluciones reales:\n\n$$\\frac{x}{x-2} +"
-            " \\frac{1}{x+2} = \\frac{8}{x^2-4}$$"
-        ),
-        "o": ["x = 2, -3", "x = -3", "x = 2", "x = 3, -2"],
-        "a": 1,
-        "e": (
-            "**Resolución:**\n\nMultiplicamos por el MCM = $(x-2)(x+2)$ con $x"
-            " \\neq \\pm 2$:\n\n$$x(x+2) + 1(x-2) = 8$$\n\n$$x^2 + 2x + x - 2 ="
-            " 8$$\n\n$$x^2 + 3x - 10 = 0$$\n\n$$(x+5)(x-2) = 0 \\implies x = -5"
-            " \\quad \\text{o} \\quad x = 2$$\n\nComo $x \\neq 2$ por"
-            " restricción de dominio, descartamos $x=2$.\n\nSolución: **x ="
-            " -5**."
-        ),
-    },
-    {
-        "topic": "Ecuación Irracial Doble",
-        "q": "Resuelve para x:\n\n$$\\sqrt{2x + 3} - \\sqrt{x + 1} = 1$$",
-        "o": ["x = -1, 3", "x = 3", "x = 0, 3", "x = 1"],
-        "a": 2,
-        "e": (
-            "**Resolución:**\n\n$$\\sqrt{2x + 3} = 1 + \\sqrt{x +"
-            " 1}$$\n\nElevamos al cuadrado:\n\n$$2x + 3 = 1 + 2\\sqrt{x + 1} +"
-            " x + 1$$\n\n$$x + 1 = 2\\sqrt{x + 1}$$\n\nElevamos al cuadrado de"
-            " nuevo:\n\n$$(x + 1)^2 = 4(x + 1)$$\n\n$$(x + 1)^2 - 4(x + 1) ="
-            " 0$$\n\n$$(x + 1)(x - 3) = 0 \\implies x = -1 \\quad \\text{o}"
-            " \\quad x = 3$$\n\nProbando valores: $x=0 \\implies \\sqrt{3}-1"
-            " \\neq 1$; para $x=3 \\implies \\sqrt{9}-\\sqrt{4} = 3-2=1$ (V);\n"
-            "para $x=-1 \\implies \\sqrt{1}-0 = 1$ (V).\nSolución válida: **x"
-            " = -1, 3**."
-        ),
-    },
 ]
 
-# Inicialización del estado
+# Inicialización de estado
 if "screen" not in st.session_state:
   st.session_state.screen = "home"
 if "player_name" not in st.session_state:
@@ -311,7 +274,6 @@ if "time_freeze" not in st.session_state:
 if "disabled_options" not in st.session_state:
   st.session_state.disabled_options = []
 
-# Música de fondo opcional via audio component
 components.html(
     f"""
     {SFX_SCRIPT}
@@ -328,7 +290,6 @@ components.html(
 
 
 def start_game():
-  # Selecciona 10 preguntas al azar del banco completo
   st.session_state.questions = random.sample(
       QUESTION_BANK, min(10, len(QUESTION_BANK))
   )
@@ -363,16 +324,12 @@ def check_answer(opt_idx, timeout=False):
   st.session_state.answered = True
   q = st.session_state.questions[st.session_state.q_index]
 
-  # Asignación progresiva de puntos según el número de pregunta
   idx = st.session_state.q_index
-  if idx < 3:
-    base_pts = 100
-  elif idx < 6:
-    base_pts = 150
-  elif idx < 9:
-    base_pts = 200
-  else:
-    base_pts = 300
+  base_pts = (
+      100
+      if idx < 3
+      else (150 if idx < 6 else (200 if idx < 9 else 300))
+  )
 
   if timeout or opt_idx != q["a"]:
     if st.session_state.shield:
@@ -421,10 +378,7 @@ st.caption("Desafío Universitario de Ecuaciones & Álgebra Avanzada")
 # PANTALLA PRINCIPAL
 if st.session_state.screen == "home":
   st.subheader("📝 Registro de Participante")
-  st.write(
-      "Pon a prueba tus conocimientos en ecuaciones lineales, cuadráticas,"
-      " fraccionarias e irracionales."
-  )
+  st.write("Pon a prueba tus conocimientos en ecuaciones universitarias.")
   st.session_state.player_name = st.text_input(
       "Ingresa tu Nombre / Código de Estudiante:",
       value=st.session_state.player_name,
@@ -481,8 +435,9 @@ elif st.session_state.screen == "game":
     apply_powerup("bomb")
     st.rerun()
 
-  # Temporizador dinámico
-  TIME_LIMIT = 25
+  # CONTROL DEL TEMPORIZADOR
+  TIME_LIMIT = 20
+
   if not st.session_state.answered and not st.session_state.time_freeze:
     elapsed = time.time() - st.session_state.start_time
     remaining = max(0, int(TIME_LIMIT - elapsed))
@@ -490,9 +445,11 @@ elif st.session_state.screen == "game":
     st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
 
     if remaining <= 0:
+      # Procesa la respuesta por tiempo agotado
       check_answer(None, timeout=True)
       st.rerun()
     else:
+      # Espera 1 segundo y refresca para mantener el contador activo
       time.sleep(1)
       st.rerun()
 
@@ -514,7 +471,7 @@ elif st.session_state.screen == "game":
         check_answer(idx)
         st.rerun()
 
-  # Retroalimentación con colores diferenciados
+  # RETROALIMENTACIÓN Y TRANSICIÓN AUTOMÁTICA
   if st.session_state.answered:
     correct_option_text = f"{chr(65 + q['a'])}) {q['o'][q['a']]}"
 
@@ -524,40 +481,49 @@ elif st.session_state.screen == "game":
           f"**Opción Elegida:** {correct_option_text}\n\n"
           f"{q['e']}"
       )
+      if st.button("Siguiente Pregunta ➔"):
+        next_question()
+        st.rerun()
+
     elif st.session_state.last_result == "shield_absorbed":
       st.info(
           "🛡️ **¡Escudo Activado! Se evito la penalización de vida.**\n\n"
           f"**Respuesta Correcta:** {correct_option_text}\n\n"
           f"{q['e']}"
       )
+      if st.button("Siguiente Pregunta ➔"):
+        next_question()
+        st.rerun()
+
     elif st.session_state.last_result == "timeout":
       st.error(
           "⏰ **¡SE TE ACABÓ EL TIEMPO!**\n\n"
           f"La respuesta correcta era: **{correct_option_text}**\n\n"
           f"{q['e']}"
       )
+      # Avance automático después de 3.5 segundos tras agotarse el tiempo
+      st.info("⏳ *Pasando al siguiente ejercicio automáticamente...*")
+      time.sleep(3.5)
+      next_question()
+      st.rerun()
+
     else:
       st.error(
           "❌ **Respuesta Incorrecta.**\n\n"
           f"La respuesta correcta era: **{correct_option_text}**\n\n"
           f"{q['e']}"
       )
-
-    if st.button("Siguiente Pregunta ➔"):
-      next_question()
-      st.rerun()
+      if st.button("Siguiente Pregunta ➔"):
+        next_question()
+        st.rerun()
 
 # PANTALLA DE RESULTADOS
 elif st.session_state.screen == "result":
   if st.session_state.player_hp > 0:
     st.balloons()
     st.title("🎉 ¡FELICITACIONES! DESAFÍO COMPLETADO")
-    st.write(
-        "Has demostrado un gran dominio de las ecuaciones universitarias."
-    )
   else:
     st.title("⏹️ INTENTO FINALIZADO")
-    st.write("Sigue practicando para mejorar tu puntuación en la materia.")
 
   r1, r2 = st.columns(2)
   r1.metric("Puntuación Total", st.session_state.score)
@@ -571,7 +537,7 @@ elif st.session_state.screen == "result":
     st.session_state.screen = "ranking"
     st.rerun()
 
-# TABLA DE PARTICIPANTES (RANKING)
+# TABLA DE RANKING
 elif st.session_state.screen == "ranking":
   st.subheader("🏆 Registro de Participantes")
   df_ranking = cargar_ranking()
