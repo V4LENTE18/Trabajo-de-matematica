@@ -47,19 +47,38 @@ st.markdown(
         transform: scale(1.01);
     }
     
+    .info-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 15px;
+    }
+
     .last-player-card {
-        background: rgba(56, 189, 248, 0.1);
+        background: linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, rgba(30, 41, 59, 0.8) 100%);
         border: 1px solid #38bdf8;
-        border-radius: 10px;
-        padding: 15px;
+        border-radius: 12px;
+        padding: 18px;
         margin-bottom: 20px;
+    }
+
+    .badge-topic {
+        background-color: #0284c7;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+        margin: 3px;
     }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# PERSISTENCIA COMPATIBLE CON STREAMLIT CLOUD Y MULTIJUGADOR
+# PERSISTENCIA Y MANEJO DE BASE DE DATOS LOCAL/GLOBAL
 RANKING_FILE = "ranking_matematica.csv"
 
 
@@ -103,7 +122,6 @@ def obtener_ultimo_jugador():
     ).reset_index(drop=True)
     ultimo = df_ordenado_tiempo.iloc[0]
 
-    # Calcular su puesto en la tabla global
     df_ranking = cargar_ranking()
     puesto = (
         df_ranking[df_ranking["Nombre"] == ultimo["Nombre"]].index[0] + 1
@@ -292,7 +310,7 @@ QUESTION_BANK = [
     },
 ]
 
-# Inicialización de estado
+# Inicialización de estados
 if "screen" not in st.session_state:
   st.session_state.screen = "home"
 if "player_name" not in st.session_state:
@@ -422,23 +440,37 @@ st.caption("Desafío Universitario Multijugador")
 
 # PANTALLA PRINCIPAL
 if st.session_state.screen == "home":
-  # TARJETA DEL ÚLTIMO JUGADOR
+  # 1. METRICAS GENERALES EN VIVO
+  df_rank = cargar_ranking()
+  total_partidas = len(df_rank)
+  max_puntaje = df_rank["Puntaje"].max() if not df_rank.empty else 0
+  top_jugador = df_rank.iloc[0]["Nombre"] if not df_rank.empty else "Nadie aún"
+
+  m1, m2, m3 = st.columns(3)
+  m1.metric("🎮 Partidas Jugadas", total_partidas)
+  m2.metric("⭐ Récord Máximo", f"{max_puntaje} pts")
+  m3.metric("👑 Líder Actual", top_jugador)
+
+  st.write("---")
+
+  # 2. TARJETA DEL ÚLTIMO JUGADOR
   ultimo = obtener_ultimo_jugador()
   if ultimo:
     st.markdown(
         f"""
         <div class="last-player-card">
-            ⚡ <b>Último Jugador en participar:</b> {ultimo['Nombre']}<br>
-            🏆 <b>Puntaje alcanzado:</b> {ultimo['Puntaje']} pts | <b>Puesto en Tabla General:</b> #{ultimo['Puesto']}<br>
-            🕒 <i>{ultimo['FechaHora']}</i>
+            ⚡ <b>Última actividad registrada:</b><br>
+            👤 <b>Jugador:</b> {ultimo['Nombre']} &nbsp;|&nbsp; 🏆 <b>Puntaje:</b> {ultimo['Puntaje']} pts &nbsp;|&nbsp; 📊 <b>Puesto General:</b> #{ultimo['Puesto']}<br>
+            🕒 <small><i>{ultimo['FechaHora']}</i></small>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+  # 3. REGISTRO DE JUGADOR
   st.subheader("📝 Registro de Participante")
   st.session_state.player_name = st.text_input(
-      "Ingresa tu Nombre / Código para competir en la Tabla Global:",
+      "Ingresa tu Nombre o Código para figurar en la Tabla Global:",
       value=st.session_state.player_name,
   )
 
@@ -451,6 +483,41 @@ if st.session_state.screen == "home":
     if st.button("🏆 Ver Tabla de Posiciones"):
       st.session_state.screen = "ranking"
       st.rerun()
+
+  st.write("---")
+
+  # 4. TEMARIO Y COMODINES
+  col_left, col_right = st.columns(2)
+
+  with col_left:
+    st.markdown("### 📚 Temas Evaluados")
+    st.markdown(
+        """
+        <span class="badge-topic">Ecuaciones Lineales</span>
+        <span class="badge-topic">Ecuaciones Cuadráticas</span>
+        <span class="badge-topic">Fracciones Algebraicas</span>
+        <span class="badge-topic">Ecuaciones Irracionales</span>
+        <span class="badge-topic">Problemas de Contexto</span>
+        """,
+        unsafe_allow_html=True,
+    )
+
+  with col_right:
+    st.markdown("### 🛠️ Comodines del Juego")
+    st.markdown("""
+        * 🛡️ **Escudo:** Evita perder vida en un fallo.
+        * ⚡ **Congelar:** Pausa el temporizador de 20s.
+        * 💣 **50 / 50:** Elimina 2 alternativas incorrectas.
+        """)
+
+  # 5. REGLAS Y MECÁNICAS
+  with st.expander("ℹ️ ¿Cómo funciona la puntuación y las ráfagas?"):
+    st.write("""
+        - **Tiempo por pregunta:** Tienes **20 segundos** para responder cada problema.
+        - **Vidas:** Inicias con **100 HP**. Cada error o tiempo agotado te restará **20 HP**.
+        - **Rachas de aciertos:** Responder consecutivamente multiplica tus puntos y hace más daño al tiempo de respuesta.
+        - **Resoluciones paso a paso:** Al contestar (correcta o incorrectamente) obtendrás la solución desarrollada con formato matemático.
+        """)
 
 # PANTALLA DE JUEGO
 elif st.session_state.screen == "game":
