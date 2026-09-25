@@ -1,46 +1,25 @@
 import random
+import time
 import streamlit as st
 
-# Configuración de página
 st.set_page_config(
     page_title="Álgebra Battle | Desafío Universitario",
     page_icon="⚡",
     layout="centered",
 )
 
-# Estilos visuales personalizados
+# Estilos CSS personalizados
 st.markdown(
     """
     <style>
-    .main {
-        background: radial-gradient(circle at top, #20295a 0%, #090d1f 100%);
-        color: #eef2ff;
-    }
-    .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-        font-weight: bold;
-        background-color: #1b2448;
-        color: #eef2ff;
-        border: 1px solid #303b68;
-    }
-    .stButton>button:hover {
-        border-color: #19d3ae;
-        background-color: #223057;
-    }
-    .stat-box {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 10px;
-        text-align: center;
-    }
+    .main { background: radial-gradient(circle at top, #20295a 0%, #090d1f 100%); color: #eef2ff; }
+    .stButton>button { width: 100%; border-radius: 12px; font-weight: bold; background-color: #1b2448; color: #eef2ff; border: 1px solid #303b68; }
+    .stButton>button:hover { border-color: #19d3ae; background-color: #223057; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Banco de preguntas
 QUESTION_BANK = [
     {
         "topic": "Operaciones con reales",
@@ -68,7 +47,10 @@ QUESTION_BANK = [
         "q": "Simplifica: 2³ × 2²",
         "o": ["2⁵", "2⁶", "4⁵", "2¹"],
         "a": 0,
-        "e": "Al multiplicar potencias de la misma base se suman los exponentes: 3 + 2 = 5.",
+        "e": (
+            "Al multiplicar potencias de la misma base se suman los"
+            " exponentes: 3 + 2 = 5."
+        ),
     },
     {
         "topic": "Ecuaciones de primer grado",
@@ -148,7 +130,10 @@ QUESTION_BANK = [
             "Siempre se vuelve igualdad",
         ],
         "a": 1,
-        "e": "Al multiplicar o dividir por un número negativo, el sentido de la desigualdad se invierte.",
+        "e": (
+            "Al multiplicar o dividir por un número negativo, el sentido de la"
+            " desigualdad se invierte."
+        ),
     },
     {
         "topic": "Radicales",
@@ -180,7 +165,7 @@ QUESTION_BANK = [
     },
 ]
 
-# Inicializar variables de estado
+# Inicialización de variables de estado
 if "screen" not in st.session_state:
   st.session_state.screen = "home"
 if "player_name" not in st.session_state:
@@ -203,6 +188,34 @@ if "correct_count" not in st.session_state:
   st.session_state.correct_count = 0
 if "ranking" not in st.session_state:
   st.session_state.ranking = []
+if "start_time" not in st.session_state:
+  st.session_state.start_time = time.time()
+if "music_enabled" not in st.session_state:
+  st.session_state.music_enabled = True
+
+# Reproductor de música de fondo en la barra lateral
+with st.sidebar:
+  st.header("🎵 Audio & Ajustes")
+  st.session_state.music_enabled = st.checkbox(
+      "Música de fondo", value=st.session_state.music_enabled
+  )
+  if st.session_state.music_enabled:
+    # Música libre de derechos (Arcade / Retro Loop)
+    audio_url = (
+        "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3"
+    )
+    st.components.v1.html(
+        f"""
+        <audio autoplay loop id="bg-music">
+            <source src="{audio_url}" type="audio/mpeg">
+        </audio>
+        <script>
+            var audio = document.getElementById("bg-music");
+            audio.volume = 0.3; // Volumen moderado
+        </script>
+        """,
+        height=0,
+    )
 
 
 def start_game():
@@ -216,21 +229,27 @@ def start_game():
   st.session_state.lives = 3
   st.session_state.correct_count = 0
   st.session_state.answered = False
+  st.session_state.start_time = time.time()
   st.session_state.screen = "game"
 
 
-def check_answer(opt_idx):
+def check_answer(opt_idx, timeout=False):
   if st.session_state.answered:
     return
   st.session_state.answered = True
   q = st.session_state.questions[st.session_state.q_index]
 
-  if opt_idx == q["a"]:
+  if timeout:
+    st.session_state.lives -= 1
+    st.session_state.streak = 0
+    st.session_state.last_result = "timeout"
+  elif opt_idx == q["a"]:
     st.session_state.correct_count += 1
     st.session_state.streak += 1
     st.session_state.best_streak = max(
         st.session_state.best_streak, st.session_state.streak
     )
+    # Bonificación por racha
     st.session_state.score += 100 + (st.session_state.streak * 20)
     st.session_state.last_result = "correct"
   else:
@@ -246,7 +265,6 @@ def next_question():
       st.session_state.q_index >= len(st.session_state.questions)
       or st.session_state.lives <= 0
   ):
-    # Guardar en ranking
     pct = int(
         (st.session_state.correct_count / len(st.session_state.questions))
         * 100
@@ -260,20 +278,20 @@ def next_question():
         st.session_state.ranking, key=lambda x: x["score"], reverse=True
     )[:10]
     st.session_state.screen = "result"
+  else:
+    st.session_state.start_time = time.time()
 
 
-# ENCABEZADO PRINCIPAL
 st.title("⚡ ÁLGEBRA BATTLE")
 st.caption("Matemática universitaria · Desafío de preguntas")
 
-# --- PANTALLA: INICIO ---
+# PANTALLA INICIAL
 if st.session_state.screen == "home":
   st.subheader("🎓⚔️🧮 Desafío Universitario")
   st.write(
-      "Resuelve retos de álgebra, acumula puntos, mantén tu racha y demuestra"
-      " tus conocimientos."
+      "Resuelve retos de álgebra antes de que se agote el tiempo (15s por"
+      " pregunta)."
   )
-
   player_input = st.text_input(
       "Nombre del jugador:", value=st.session_state.player_name
   )
@@ -290,9 +308,8 @@ if st.session_state.screen == "home":
       st.session_state.screen = "ranking"
       st.rerun()
 
-# --- PANTALLA: JUEGO ---
+# PANTALLA DE JUEGO
 elif st.session_state.screen == "game":
-  # Panel de Estado / Estadísticas
   c1, c2, c3, c4 = st.columns(4)
   c1.metric("Puntos", st.session_state.score)
   c2.metric("Racha 🔥", st.session_state.streak)
@@ -305,13 +322,24 @@ elif st.session_state.screen == "game":
       f"{st.session_state.q_index + 1}/{len(st.session_state.questions)}",
   )
 
-  st.divider()
+  # Temporizador (15 segundos)
+  TIME_LIMIT = 15
+  elapsed_time = time.time() - st.session_state.start_time
+  remaining_time = max(0, int(TIME_LIMIT - elapsed_time))
 
+  if not st.session_state.answered:
+    progress = remaining_time / TIME_LIMIT
+    st.progress(progress, text=f"⏱️ Tiempo restante: {remaining_time}s")
+
+    if remaining_time == 0:
+      check_answer(None, timeout=True)
+      st.rerun()
+
+  st.divider()
   q = st.session_state.questions[st.session_state.q_index]
   st.caption(f"Categoría: **{q['topic']}**")
   st.markdown(f"### {q['q']}")
 
-  # Botones de opciones
   for idx, opt in enumerate(q["o"]):
     label = f"{chr(65 + idx)}) {opt}"
     if st.button(
@@ -320,10 +348,13 @@ elif st.session_state.screen == "game":
       check_answer(idx)
       st.rerun()
 
-  # Retroalimentación tras responder
   if st.session_state.answered:
     if st.session_state.last_result == "correct":
       st.success(f"✅ **¡Correcto!**\n\n{q['e']}")
+    elif st.session_state.last_result == "timeout":
+      st.warning(
+          f"⏰ **¡Tiempo agotado!** Respuesta correcta: **{q['o'][q['a']]}**\n\n{q['e']}"
+      )
     else:
       st.error(
           f"❌ **Incorrecto.** Respuesta correcta: **{q['o'][q['a']]}**\n\n{q['e']}"
@@ -333,22 +364,16 @@ elif st.session_state.screen == "game":
       next_question()
       st.rerun()
 
-# --- PANTALLA: RESULTADOS ---
+# PANTALLA DE RESULTADOS
 elif st.session_state.screen == "result":
   st.subheader("🏆 ¡Desafío completado!")
   pct = int(
       (st.session_state.correct_count / len(st.session_state.questions)) * 100
   )
-
   res_c1, res_c2, res_c3 = st.columns(3)
   res_c1.metric("Puntuación Final", st.session_state.score)
   res_c2.metric("Precisión", f"{pct}%")
   res_c3.metric("Mejor Racha", st.session_state.best_streak)
-
-  st.write(
-      f"Respondiste correctamente **{st.session_state.correct_count}** de"
-      f" **{len(st.session_state.questions)}** preguntas."
-  )
 
   btn_col1, btn_col2 = st.columns(2)
   with btn_col1:
@@ -360,7 +385,7 @@ elif st.session_state.screen == "result":
       st.session_state.screen = "ranking"
       st.rerun()
 
-# --- PANTALLA: RANKING ---
+# PANTALLA DE RANKING
 elif st.session_state.screen == "ranking":
   st.subheader("🏆 Ranking General")
   if st.session_state.ranking:
