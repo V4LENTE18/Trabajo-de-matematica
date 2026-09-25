@@ -435,33 +435,12 @@ elif st.session_state.screen == "game":
     apply_powerup("bomb")
     st.rerun()
 
-  # CONTROL DEL TEMPORIZADOR
-  TIME_LIMIT = 20
-
-  if not st.session_state.answered and not st.session_state.time_freeze:
-    elapsed = time.time() - st.session_state.start_time
-    remaining = max(0, int(TIME_LIMIT - elapsed))
-
-    st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
-
-    if remaining <= 0:
-      # Procesa la respuesta por tiempo agotado
-      check_answer(None, timeout=True)
-      st.rerun()
-    else:
-      # Espera 1 segundo y refresca para mantener el contador activo
-      time.sleep(1)
-      st.rerun()
-
-  elif st.session_state.time_freeze and not st.session_state.answered:
-    st.info("⚡ ¡TIEMPO CONGELADO PARA ESTA PREGUNTA!")
-
+  # 1. RENDERIZAR PREGUNTA Y OPCIONES (Debe ir ANTES del control del tiempo)
   st.divider()
   q = st.session_state.questions[st.session_state.q_index]
   st.caption(f"Tema: **{q['topic']}**")
   st.markdown(f"### {q['q']}")
 
-  # Renderizado de alternativas
   for idx, opt in enumerate(q["o"]):
     label = f"{chr(65+idx)}) {opt}"
     if idx in st.session_state.disabled_options:
@@ -471,7 +450,26 @@ elif st.session_state.screen == "game":
         check_answer(idx)
         st.rerun()
 
-  # RETROALIMENTACIÓN Y TRANSICIÓN AUTOMÁTICA
+  # 2. CONTROL DEL TEMPORIZADOR
+  TIME_LIMIT = 20
+
+  if not st.session_state.answered and not st.session_state.time_freeze:
+    elapsed = time.time() - st.session_state.start_time
+    remaining = max(0, int(TIME_LIMIT - elapsed))
+
+    st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
+
+    if remaining <= 0:
+      check_answer(None, timeout=True)
+      st.rerun()
+    else:
+      time.sleep(1)
+      st.rerun()
+
+  elif st.session_state.time_freeze and not st.session_state.answered:
+    st.info("⚡ ¡TIEMPO CONGELADO PARA ESTA PREGUNTA!")
+
+  # 3. RETROALIMENTACIÓN Y TRANSICIÓN
   if st.session_state.answered:
     correct_option_text = f"{chr(65 + q['a'])}) {q['o'][q['a']]}"
 
@@ -501,11 +499,9 @@ elif st.session_state.screen == "game":
           f"La respuesta correcta era: **{correct_option_text}**\n\n"
           f"{q['e']}"
       )
-      # Avance automático después de 3.5 segundos tras agotarse el tiempo
-      st.info("⏳ *Pasando al siguiente ejercicio automáticamente...*")
-      time.sleep(3.5)
-      next_question()
-      st.rerun()
+      if st.button("Siguiente Pregunta ➔"):
+        next_question()
+        st.rerun()
 
     else:
       st.error(
