@@ -11,7 +11,7 @@ st.set_page_config(
     layout="centered",
 )
 
-# Estilos CSS con colores vibrantes y legibles
+# Estilos CSS con contraste visual elevado
 st.markdown(
     """
     <style>
@@ -51,7 +51,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Archivo local para persistir los datos de los participantes
+# Persistencia local de participantes
 RANKING_FILE = "ranking_matematica.csv"
 
 
@@ -76,7 +76,7 @@ def guardar_participante(nombre, puntaje, victoria):
   df.to_csv(RANKING_FILE, index=False)
 
 
-# Sonidos Web Audio API
+# Efectos de Sonido Web Audio API
 SFX_SCRIPT = """
 <script>
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -113,85 +113,178 @@ function sfxPowerup() {
 </script>
 """
 
+# BANCO COMPLETO DE PREGUNTAS (Incluye los ejercicios obligatorios + adicionales complejos)
 QUESTION_BANK = [
+    # Preguntas exactas requeridas
     {
-        "topic": "Operaciones Reales",
-        "q": "Calcula: 18 − 3 × 4 + 2",
-        "o": ["8", "14", "68", "2"],
-        "a": 0,
-        "e": "Prioridad: 3 × 4 = 12 ➔ 18 − 12 + 2 = 8.",
-    },
-    {
-        "topic": "Operaciones Reales",
-        "q": "Calcula: (−5)² − 3²",
-        "o": ["−16", "16", "34", "−34"],
-        "a": 1,
-        "e": "(−5)² = 25 y 3² = 9 ➔ 25 − 9 = 16.",
-    },
-    {
-        "topic": "Fracciones & Potencias",
-        "q": "Calcula: 1/2 + 3/4",
-        "o": ["4/6", "5/4", "7/8", "1/4"],
-        "a": 1,
-        "e": "Denominador común 4: 2/4 + 3/4 = 5/4.",
-    },
-    {
-        "topic": "Fracciones & Potencias",
-        "q": "Simplifica: 2³ × 2²",
-        "o": ["2⁵", "2⁶", "4⁵", "2¹"],
-        "a": 0,
-        "e": "Bases iguales suman exponentes: 3 + 2 = 5.",
-    },
-    {
-        "topic": "Ecuaciones de Primer Grado",
-        "q": "Resuelve: 3x + 7 = 22",
-        "o": ["x = 3", "x = 5", "x = 7", "x = 9"],
-        "a": 1,
-        "e": "3x = 15 ➔ x = 5.",
-    },
-    {
-        "topic": "Ecuaciones de Primer Grado",
-        "q": "Resuelve: 5(x − 2) = 20",
-        "o": ["x = 2", "x = 4", "x = 6", "x = 8"],
+        "topic": "Ecuación Lineal",
+        "q": "Determina el valor de x:\n\n$$4(2x - 3) - 3(x + 2) = 2x + 7$$",
+        "o": ["22/3", "23/3", "25/3", "27/3"],
         "a": 2,
-        "e": "x − 2 = 4 ➔ x = 6.",
+        "e": (
+            "**Resolución:**\n\n$$4(2x - 3) - 3(x + 2) = 2x + 7$$\n\n$$8x - 12 -"
+            " 3x - 6 = 2x + 7$$\n\n$$5x - 18 = 2x + 7$$\n\n$$3x = 25$$\n\n$$x ="
+            " 25/3$$"
+        ),
     },
     {
-        "topic": "Productos Notables",
-        "q": "Desarrollo de: (x + 3)²",
-        "o": ["x² + 9", "x² + 3x + 9", "x² + 6x + 9", "x² + 6x + 3"],
-        "a": 2,
-        "e": "Binomio al cuadrado: x² + 2(3)x + 3².",
+        "topic": "Ecuación Lineal con Fracciones",
+        "q": "Resuelve:\n\n$$\\frac{3x - 2}{4} + \\frac{x + 1}{2} = 7$$",
+        "o": ["26/5", "28/5", "30/5", "32/5"],
+        "a": 1,
+        "e": (
+            "**Resolución:**\n\nMultiplicamos toda la ecuación por"
+            " 4:\n\n$$3x - 2 + 2(x + 1) = 28$$\n\n$$3x - 2 + 2x + 2 ="
+            " 28$$\n\n$$5x = 28$$\n\n$$x = 28/5$$"
+        ),
     },
     {
-        "topic": "Productos Notables",
-        "q": "Desarrolla: (a − 4)(a + 4)",
-        "o": ["a² − 16", "a² + 16", "a² − 8a + 16", "a² + 8a + 16"],
+        "topic": "Ecuación Lineal con Paréntesis",
+        "q": (
+            "Determina el valor de x:\n\n$$7(x - 2) - 2(3x + 1) = 4(x - 5) +"
+            " 9$$"
+        ),
+        "o": ["-5/3", "-4/3", "5/3", "4/3"],
         "a": 0,
-        "e": "Diferencia de cuadrados: a² − 16.",
+        "e": (
+            "**Resolución:**\n\n$$7x - 14 - 6x - 2 = 4x - 20 + 9$$\n\n$$x - 16"
+            " = 4x - 11$$\n\n$$x - 4x = -11 + 16$$\n\n$$-3x = 5$$\n\n$$x ="
+            " -5/3$$"
+        ),
     },
     {
-        "topic": "Factorización",
-        "q": "Factoriza: x² + 5x + 6",
-        "o": [
-            "(x+1)(x+6)",
-            "(x+2)(x+3)",
-            "(x−2)(x−3)",
-            "(x+5)(x+1)",
-        ],
+        "topic": "Ecuación Cuadrática",
+        "q": "Resuelve:\n\n$$x^2 - 9x + 20 = 0$$",
+        "o": ["x = 2, 10", "x = 4, 5", "x = 3, 6", "x = -4, -5"],
         "a": 1,
-        "e": "Números que sumados den 5 y multiplicados 6: (x+2)(x+3).",
+        "e": (
+            "**Resolución:**\n\n$$x^2 - 9x + 20 = 0$$\n\n$$(x - 4)(x - 5) ="
+            " 0$$\n\n$$x = 4 \\quad \\text{o} \\quad x = 5$$"
+        ),
     },
     {
-        "topic": "Ecuaciones Cuadráticas",
-        "q": "En x² − 5x + 6 = 0, las raíces son:",
-        "o": ["1 y 6", "2 y 3", "−2 y −3", "0 y 6"],
+        "topic": "Ecuación Cuadrática",
+        "q": "Determina las soluciones:\n\n$$2x^2 - 7x + 3 = 0$$",
+        "o": ["x = 3, 1/2", "x = 2, 3/2", "x = -3, 1/2", "x = 3, -1/2"],
+        "a": 0,
+        "e": (
+            "**Resolución:**\n\n$$2x^2 - 7x + 3 = 0$$\n\n$$(2x - 1)(x - 3) ="
+            " 0$$\n\n$$2x - 1 = 0 \\implies x = 1/2$$\n\n$$x - 3 = 0 \\implies"
+            " x = 3$$"
+        ),
+    },
+    {
+        "topic": "Ecuación Cuadrática Contextualizada",
+        "q": (
+            "El área de un terreno rectangular es de 84 m². Su largo mide 5"
+            " metros más que su ancho. ¿Cuál es el ancho del terreno?"
+        ),
+        "o": ["6 m", "7 m", "8 m", "9 m"],
         "a": 1,
-        "e": "Factorización: (x−2)(x−3) = 0 ➔ x = 2, x = 3.",
+        "e": (
+            "**Resolución:**\n\nSea $x$ el ancho. Largo = $x + 5$.\n\nÁrea ="
+            " largo × ancho $\\implies x(x + 5) = 84$\n\n$$x^2 + 5x - 84 ="
+            " 0$$\n\n$$(x + 12)(x - 7) = 0$$\n\n$$x = -12 \\quad \\text{o}"
+            " \\quad x = 7$$\n\nComo una medida de longitud no puede ser"
+            " negativa: **x = 7 m**"
+        ),
+    },
+    {
+        "topic": "Ecuación Fraccionaria",
+        "q": (
+            "Resuelve considerando las restricciones:\n\n$$\\frac{2}{x} +"
+            " \\frac{3}{x + 1} = 2$$"
+        ),
+        "o": ["x = 2, -1/2", "x = 3, -1/2", "x = 2, 3/2", "x = -2, 3/2"],
+        "a": 0,
+        "e": (
+            "**Resolución:**\n\nRestricciones: $x \\neq 0$ y $x \\neq"
+            " -1$.\n\nMultiplicamos por $x(x + 1)$:\n\n$$2(x + 1) + 3x = 2x(x"
+            " + 1)$$\n\n$$2x + 2 + 3x = 2x^2 + 2x$$\n\n$$2x^2 - 3x - 2 ="
+            " 0$$\n\n$$(2x + 1)(x - 2) = 0$$\n\n$$x = -1/2 \\quad \\text{o}"
+            " \\quad x = 2$$"
+        ),
+    },
+    {
+        "topic": "Ecuación Fraccionaria",
+        "q": (
+            "Determina el conjunto solución:\n\n$$\\frac{x + 2}{x - 1} +"
+            " \\frac{2}{x - 1} = 3$$"
+        ),
+        "o": ["x = 1", "x = 5/2", "x = 7/2", "x = 4"],
+        "a": 2,
+        "e": (
+            "**Resolución:**\n\nRestricción: $x \\neq 1$.\n\n$$\\frac{x + 2 +"
+            " 2}{x - 1} = 3$$\n\n$$\\frac{x + 4}{x - 1} = 3$$\n\n$$x + 4 = 3(x"
+            " - 1)$$\n\n$$x + 4 = 3x - 3$$\n\n$$7 = 2x \\implies x = 7/2$$"
+        ),
+    },
+    {
+        "topic": "Ecuación Irregional",
+        "q": "Resuelve:\n\n$$\\sqrt{x + 6} = x$$",
+        "o": ["x = 2", "x = 3", "x = 4", "x = 6"],
+        "a": 1,
+        "e": (
+            "**Resolución:**\n\nElevamos al cuadrado ambos lados:\n\n$$x + 6 ="
+            " x^2$$\n\n$$x^2 - x - 6 = 0$$\n\n$$(x - 3)(x + 2) = 0$$\n\n$$x = 3"
+            " \\quad \\text{o} \\quad x = -2$$\n\nVerificamos en la ecuación"
+            " original:\nPara $x = 3$: $\\sqrt{3+6} = 3 \\implies 3 = 3$ (V)\nPara"
+            " $x = -2$: $\\sqrt{-2+6} = -2 \\implies 2 \\neq -2$ (F)\n\nPor lo"
+            " tanto, **x = 3**."
+        ),
+    },
+    {
+        "topic": "Reto Final — Ecuación Irracial",
+        "q": "Determina la solución válida:\n\n$$\\sqrt{x + 4} + \\sqrt{x} = 4$$",
+        "o": ["x = 1", "x = 9/4", "x = 3", "x = 4"],
+        "a": 1,
+        "e": (
+            "**Resolución:**\n\n$$\\sqrt{x + 4} = 4 - \\sqrt{x}$$\n\nElevamos"
+            " al cuadrado:\n\n$$x + 4 = 16 - 8\\sqrt{x} + x$$\n\n$$4 = 16 -"
+            " 8\\sqrt{x}$$\n\n$$8\\sqrt{x} = 12 \\implies \\sqrt{x} ="
+            " 3/2$$\n\n$$x = (3/2)^2 = 9/4$$\n\nVerificación:\n$$\\sqrt{9/4 +"
+            " 4} + \\sqrt{9/4} = \\sqrt{25/4} + 3/2 = 5/2 + 3/2 = 4$$ (V)\n\nPor"
+            " lo tanto: **x = 9/4**."
+        ),
+    },
+    # Adicionales de alta dificultad para banco expandido
+    {
+        "topic": "Ecuación Fraccionaria Avanzada",
+        "q": (
+            "Encuentra las soluciones reales:\n\n$$\\frac{x}{x-2} +"
+            " \\frac{1}{x+2} = \\frac{8}{x^2-4}$$"
+        ),
+        "o": ["x = 2, -3", "x = -3", "x = 2", "x = 3, -2"],
+        "a": 1,
+        "e": (
+            "**Resolución:**\n\nMultiplicamos por el MCM = $(x-2)(x+2)$ con $x"
+            " \\neq \\pm 2$:\n\n$$x(x+2) + 1(x-2) = 8$$\n\n$$x^2 + 2x + x - 2 ="
+            " 8$$\n\n$$x^2 + 3x - 10 = 0$$\n\n$$(x+5)(x-2) = 0 \\implies x = -5"
+            " \\quad \\text{o} \\quad x = 2$$\n\nComo $x \\neq 2$ por"
+            " restricción de dominio, descartamos $x=2$.\n\nSolución: **x ="
+            " -5**."
+        ),
+    },
+    {
+        "topic": "Ecuación Irracial Doble",
+        "q": "Resuelve para x:\n\n$$\\sqrt{2x + 3} - \\sqrt{x + 1} = 1$$",
+        "o": ["x = -1, 3", "x = 3", "x = 0, 3", "x = 1"],
+        "a": 2,
+        "e": (
+            "**Resolución:**\n\n$$\\sqrt{2x + 3} = 1 + \\sqrt{x +"
+            " 1}$$\n\nElevamos al cuadrado:\n\n$$2x + 3 = 1 + 2\\sqrt{x + 1} +"
+            " x + 1$$\n\n$$x + 1 = 2\\sqrt{x + 1}$$\n\nElevamos al cuadrado de"
+            " nuevo:\n\n$$(x + 1)^2 = 4(x + 1)$$\n\n$$(x + 1)^2 - 4(x + 1) ="
+            " 0$$\n\n$$(x + 1)(x - 3) = 0 \\implies x = -1 \\quad \\text{o}"
+            " \\quad x = 3$$\n\nProbando valores: $x=0 \\implies \\sqrt{3}-1"
+            " \\neq 1$; para $x=3 \\implies \\sqrt{9}-\\sqrt{4} = 3-2=1$ (V);\n"
+            "para $x=-1 \\implies \\sqrt{1}-0 = 1$ (V).\nSolución válida: **x"
+            " = -1, 3**."
+        ),
     },
 ]
 
-# Estado inicial del juego
+# Inicialización del estado
 if "screen" not in st.session_state:
   st.session_state.screen = "home"
 if "player_name" not in st.session_state:
@@ -211,7 +304,6 @@ if "questions" not in st.session_state:
 if "answered" not in st.session_state:
   st.session_state.answered = False
 
-# Comodines
 if "shield" not in st.session_state:
   st.session_state.shield = False
 if "time_freeze" not in st.session_state:
@@ -219,7 +311,7 @@ if "time_freeze" not in st.session_state:
 if "disabled_options" not in st.session_state:
   st.session_state.disabled_options = []
 
-# Reproductor de música de fondo
+# Música de fondo opcional via audio component
 components.html(
     f"""
     {SFX_SCRIPT}
@@ -228,7 +320,7 @@ components.html(
     </audio>
     <script>
         var audio = document.getElementById("bg-music");
-        audio.volume = 0.15;
+        if (audio) {{ audio.volume = 0.12; }}
     </script>
 """,
     height=0,
@@ -236,6 +328,7 @@ components.html(
 
 
 def start_game():
+  # Selecciona 10 preguntas al azar del banco completo
   st.session_state.questions = random.sample(
       QUESTION_BANK, min(10, len(QUESTION_BANK))
   )
@@ -270,6 +363,17 @@ def check_answer(opt_idx, timeout=False):
   st.session_state.answered = True
   q = st.session_state.questions[st.session_state.q_index]
 
+  # Asignación progresiva de puntos según el número de pregunta
+  idx = st.session_state.q_index
+  if idx < 3:
+    base_pts = 100
+  elif idx < 6:
+    base_pts = 150
+  elif idx < 9:
+    base_pts = 200
+  else:
+    base_pts = 300
+
   if timeout or opt_idx != q["a"]:
     if st.session_state.shield:
       st.session_state.shield = False
@@ -279,7 +383,7 @@ def check_answer(opt_idx, timeout=False):
       )
     else:
       components.html(f"{SFX_SCRIPT}<script>sfxWrong();</script>", height=0)
-      st.session_state.player_hp -= 35
+      st.session_state.player_hp -= 20
       st.session_state.streak = 0
       st.session_state.last_result = "timeout" if timeout else "wrong"
   else:
@@ -287,7 +391,7 @@ def check_answer(opt_idx, timeout=False):
     st.session_state.streak += 1
     damage = 10 + (st.session_state.streak * 5)
     st.session_state.boss_hp = max(0, st.session_state.boss_hp - damage)
-    st.session_state.score += 150 + (st.session_state.streak * 30)
+    st.session_state.score += base_pts + (st.session_state.streak * 20)
     st.session_state.last_result = "correct"
 
 
@@ -300,31 +404,29 @@ def next_question():
   if (
       st.session_state.q_index >= len(st.session_state.questions)
       or st.session_state.player_hp <= 0
-      or st.session_state.boss_hp <= 0
   ):
-    # Guardar automáticamente los datos del participante en archivo local
     guardar_participante(
         st.session_state.player_name,
         st.session_state.score,
-        st.session_state.boss_hp <= 0,
+        st.session_state.player_hp > 0,
     )
     st.session_state.screen = "result"
   else:
     st.session_state.start_time = time.time()
 
 
-# ENCABEZADO
 st.title("🧮 ÁLGEBRA MASTER")
-st.caption("Desafío Educativo de Matemática Universitaria")
+st.caption("Desafío Universitario de Ecuaciones & Álgebra Avanzada")
 
-# PANTALLA INICIAL
+# PANTALLA PRINCIPAL
 if st.session_state.screen == "home":
   st.subheader("📝 Registro de Participante")
   st.write(
-      "Pon a prueba tus habilidades matemáticas en este reto interactivo."
+      "Pon a prueba tus conocimientos en ecuaciones lineales, cuadráticas,"
+      " fraccionarias e irracionales."
   )
   st.session_state.player_name = st.text_input(
-      "Ingresa tu Nombre / Nombre de Participante:",
+      "Ingresa tu Nombre / Código de Estudiante:",
       value=st.session_state.player_name,
   )
 
@@ -342,15 +444,18 @@ if st.session_state.screen == "home":
 elif st.session_state.screen == "game":
   col_hp1, col_hp2 = st.columns(2)
   with col_hp1:
-    st.write(f"❤️ **Vida del Participante:** {st.session_state.player_hp}%")
+    st.write(f"❤️ **Vida:** {st.session_state.player_hp}%")
     st.progress(max(0, st.session_state.player_hp) / 100)
   with col_hp2:
-    st.write(f"🎯 **Progreso del Reto:** {st.session_state.boss_hp}%")
-    st.progress(max(0, st.session_state.boss_hp) / 100)
+    st.write(
+        f"📌 **Pregunta:** {st.session_state.q_index + 1} /"
+        f" {len(st.session_state.questions)}"
+    )
+    st.progress((st.session_state.q_index + 1) / 10)
 
   m1, m2, m3 = st.columns(3)
   m1.metric("Puntuación", st.session_state.score)
-  m2.metric("Racha Rápida", f"x{st.session_state.streak + 1}")
+  m2.metric("Racha", f"x{st.session_state.streak}")
   m3.metric("Escudo", "🛡️ ACTIVO" if st.session_state.shield else "INACTIVO")
 
   st.write("---")
@@ -376,15 +481,21 @@ elif st.session_state.screen == "game":
     apply_powerup("bomb")
     st.rerun()
 
-  # Temporizador
-  TIME_LIMIT = 15
+  # Temporizador dinámico
+  TIME_LIMIT = 25
   if not st.session_state.answered and not st.session_state.time_freeze:
     elapsed = time.time() - st.session_state.start_time
     remaining = max(0, int(TIME_LIMIT - elapsed))
+
     st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
-    if remaining == 0:
+
+    if remaining <= 0:
       check_answer(None, timeout=True)
       st.rerun()
+    else:
+      time.sleep(1)
+      st.rerun()
+
   elif st.session_state.time_freeze and not st.session_state.answered:
     st.info("⚡ ¡TIEMPO CONGELADO PARA ESTA PREGUNTA!")
 
@@ -393,34 +504,43 @@ elif st.session_state.screen == "game":
   st.caption(f"Tema: **{q['topic']}**")
   st.markdown(f"### {q['q']}")
 
-  # Opciones
+  # Renderizado de alternativas
   for idx, opt in enumerate(q["o"]):
+    label = f"{chr(65+idx)}) {opt}"
     if idx in st.session_state.disabled_options:
       st.button(f"🚫 {opt}", key=f"opt_{idx}", disabled=True)
     else:
-      if st.button(
-          f"{chr(65+idx)}) {opt}",
-          key=f"opt_{idx}",
-          disabled=st.session_state.answered,
-      ):
+      if st.button(label, key=f"opt_{idx}", disabled=st.session_state.answered):
         check_answer(idx)
         st.rerun()
 
-  # Muestra de resultados diferenciados por colores
+  # Retroalimentación con colores diferenciados
   if st.session_state.answered:
+    correct_option_text = f"{chr(65 + q['a'])}) {q['o'][q['a']]}"
+
     if st.session_state.last_result == "correct":
-      st.success(f"✅ **¡Respuesta Correcta!**\n\n{q['e']}")
+      st.success(
+          "✅ **¡Respuesta Correcta!**\n\n"
+          f"**Opción Elegida:** {correct_option_text}\n\n"
+          f"{q['e']}"
+      )
     elif st.session_state.last_result == "shield_absorbed":
-      st.info(f"🛡️ **¡Escudo Activado! Se evitó la penalización.**\n\n{q['e']}")
+      st.info(
+          "🛡️ **¡Escudo Activado! Se evito la penalización de vida.**\n\n"
+          f"**Respuesta Correcta:** {correct_option_text}\n\n"
+          f"{q['e']}"
+      )
     elif st.session_state.last_result == "timeout":
       st.error(
-          f"❌ **¡Tiempo Agotado!** La respuesta correcta era:"
-          f" **{q['o'][q['a']]}**\n\n{q['e']}"
+          "⏰ **¡SE TE ACABÓ EL TIEMPO!**\n\n"
+          f"La respuesta correcta era: **{correct_option_text}**\n\n"
+          f"{q['e']}"
       )
     else:
       st.error(
-          f"❌ **Respuesta Incorrecta.** La respuesta correcta era:"
-          f" **{q['o'][q['a']]}**\n\n{q['e']}"
+          "❌ **Respuesta Incorrecta.**\n\n"
+          f"La respuesta correcta era: **{correct_option_text}**\n\n"
+          f"{q['e']}"
       )
 
     if st.button("Siguiente Pregunta ➔"):
@@ -429,14 +549,18 @@ elif st.session_state.screen == "game":
 
 # PANTALLA DE RESULTADOS
 elif st.session_state.screen == "result":
-  if st.session_state.boss_hp <= 0:
+  if st.session_state.player_hp > 0:
     st.balloons()
-    st.title("🎉 ¡FELICITACIONES! DESAFÍO SUPERADO")
+    st.title("🎉 ¡FELICITACIONES! DESAFÍO COMPLETADO")
+    st.write(
+        "Has demostrado un gran dominio de las ecuaciones universitarias."
+    )
   else:
-    st.title("FIN DEL INTENTO")
+    st.title("⏹️ INTENTO FINALIZADO")
+    st.write("Sigue practicando para mejorar tu puntuación en la materia.")
 
   r1, r2 = st.columns(2)
-  r1.metric("Puntuación Final", st.session_state.score)
+  r1.metric("Puntuación Total", st.session_state.score)
   r2.metric("Participante", st.session_state.player_name)
 
   c1, c2 = st.columns(2)
@@ -447,7 +571,7 @@ elif st.session_state.screen == "result":
     st.session_state.screen = "ranking"
     st.rerun()
 
-# PANTALLA DE RANKING (TABLA GUARDADA)
+# TABLA DE PARTICIPANTES (RANKING)
 elif st.session_state.screen == "ranking":
   st.subheader("🏆 Registro de Participantes")
   df_ranking = cargar_ranking()
