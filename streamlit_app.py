@@ -46,34 +46,79 @@ st.markdown(
         color: #ffffff;
         transform: scale(1.01);
     }
+    
+    .last-player-card {
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid #38bdf8;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Persistencia local de ranking
+# PERSISTENCIA COMPATIBLE CON STREAMLIT CLOUD Y MULTIJUGADOR
 RANKING_FILE = "ranking_matematica.csv"
 
 
 def cargar_ranking():
+  """Carga la tabla de posiciones desde el archivo global persitente."""
   if os.path.exists(RANKING_FILE):
     try:
-      return pd.read_csv(RANKING_FILE)
+      df = pd.read_csv(RANKING_FILE)
+      return df.sort_values(by="Puntaje", ascending=False).reset_index(
+          drop=True
+      )
     except Exception:
-      return pd.DataFrame(columns=["Nombre", "Puntaje", "Resultado"])
-  return pd.DataFrame(columns=["Nombre", "Puntaje", "Resultado"])
+      return pd.DataFrame(
+          columns=["Nombre", "Puntaje", "Resultado", "FechaHora"]
+      )
+  return pd.DataFrame(columns=["Nombre", "Puntaje", "Resultado", "FechaHora"])
 
 
 def guardar_participante(nombre, puntaje, victoria):
+  """Guarda el registro con marca de tiempo para identificar al último jugador."""
   df = cargar_ranking()
+  fecha_actual = time.strftime("%Y-%m-%d %H:%M:%S")
+
   nuevo_registro = pd.DataFrame([{
       "Nombre": nombre,
       "Puntaje": puntaje,
       "Resultado": "Ganador 🏆" if victoria else "Finalizado ⏹️",
+      "FechaHora": fecha_actual,
   }])
+
   df = pd.concat([df, nuevo_registro], ignore_index=True)
-  df = df.sort_values(by="Puntaje", ascending=False).reset_index(drop=True)
   df.to_csv(RANKING_FILE, index=False)
+
+
+def obtener_ultimo_jugador():
+  """Retorna los datos del último participante registrado."""
+  df = cargar_ranking()
+  if not df.empty and "FechaHora" in df.columns:
+    df_ordenado_tiempo = df.sort_values(
+        by="FechaHora", ascending=False
+    ).reset_index(drop=True)
+    ultimo = df_ordenado_tiempo.iloc[0]
+
+    # Calcular su puesto en la tabla global
+    df_ranking = cargar_ranking()
+    puesto = (
+        df_ranking[df_ranking["Nombre"] == ultimo["Nombre"]].index[0] + 1
+        if not df_ranking.empty
+        else 1
+    )
+
+    return {
+        "Nombre": ultimo["Nombre"],
+        "Puntaje": ultimo["Puntaje"],
+        "Resultado": ultimo["Resultado"],
+        "FechaHora": ultimo["FechaHora"],
+        "Puesto": puesto,
+    }
+  return None
 
 
 # Efectos de Sonido
@@ -373,14 +418,27 @@ def next_question():
 
 
 st.title("🧮 ÁLGEBRA MASTER")
-st.caption("Desafío Universitario de Ecuaciones & Álgebra Avanzada")
+st.caption("Desafío Universitario Multijugador")
 
 # PANTALLA PRINCIPAL
 if st.session_state.screen == "home":
+  # TARJETA DEL ÚLTIMO JUGADOR
+  ultimo = obtener_ultimo_jugador()
+  if ultimo:
+    st.markdown(
+        f"""
+        <div class="last-player-card">
+            ⚡ <b>Último Jugador en participar:</b> {ultimo['Nombre']}<br>
+            🏆 <b>Puntaje alcanzado:</b> {ultimo['Puntaje']} pts | <b>Puesto en Tabla General:</b> #{ultimo['Puesto']}<br>
+            🕒 <i>{ultimo['FechaHora']}</i>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
   st.subheader("📝 Registro de Participante")
-  st.write("Pon a prueba tus conocimientos en ecuaciones universitarias.")
   st.session_state.player_name = st.text_input(
-      "Ingresa tu Nombre / Código de Estudiante:",
+      "Ingresa tu Nombre / Código para competir en la Tabla Global:",
       value=st.session_state.player_name,
   )
 
@@ -390,7 +448,7 @@ if st.session_state.screen == "home":
       start_game()
       st.rerun()
   with c2:
-    if st.button("🏆 Tabla de Participantes"):
+    if st.button("🏆 Ver Tabla de Posiciones"):
       st.session_state.screen = "ranking"
       st.rerun()
 
@@ -435,7 +493,7 @@ elif st.session_state.screen == "game":
     apply_powerup("bomb")
     st.rerun()
 
-  # 1. RENDERIZAR PREGUNTA Y OPCIONES (Debe ir ANTES del control del tiempo)
+  # RENDERIZADO DE PREGUNTA Y OPCIONES
   st.divider()
   q = st.session_state.questions[st.session_state.q_index]
   st.caption(f"Tema: **{q['topic']}**")
@@ -450,13 +508,11 @@ elif st.session_state.screen == "game":
         check_answer(idx)
         st.rerun()
 
-  # 2. CONTROL DEL TEMPORIZADOR
+  # TEMPORIZADOR
   TIME_LIMIT = 20
-
   if not st.session_state.answered and not st.session_state.time_freeze:
     elapsed = time.time() - st.session_state.start_time
     remaining = max(0, int(TIME_LIMIT - elapsed))
-
     st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
 
     if remaining <= 0:
@@ -469,7 +525,7 @@ elif st.session_state.screen == "game":
   elif st.session_state.time_freeze and not st.session_state.answered:
     st.info("⚡ ¡TIEMPO CONGELADO PARA ESTA PREGUNTA!")
 
-  # 3. RETROALIMENTACIÓN Y TRANSICIÓN
+  # RETROALIMENTACIÓN
   if st.session_state.answered:
     correct_option_text = f"{chr(65 + q['a'])}) {q['o'][q['a']]}"
 
@@ -485,7 +541,7 @@ elif st.session_state.screen == "game":
 
     elif st.session_state.last_result == "shield_absorbed":
       st.info(
-          "🛡️ **¡Escudo Activado! Se evito la penalización de vida.**\n\n"
+          "🛡️ **¡Escudo Activado! Se evitó la penalización de vida.**\n\n"
           f"**Respuesta Correcta:** {correct_option_text}\n\n"
           f"{q['e']}"
       )
@@ -529,19 +585,23 @@ elif st.session_state.screen == "result":
   if c1.button("🔁 Intentar de Nuevo"):
     start_game()
     st.rerun()
-  if c2.button("🏆 Ver Registro de Participantes"):
+  if c2.button("🏆 Ver Tabla General"):
     st.session_state.screen = "ranking"
     st.rerun()
 
-# TABLA DE RANKING
+# TABLA DE RANKING MULTIJUGADOR
 elif st.session_state.screen == "ranking":
-  st.subheader("🏆 Registro de Participantes")
+  st.subheader("🏆 Tabla Global de Posiciones Multijugador")
+
+  if st.button("🔄 Actualizar Tabla"):
+    st.rerun()
+
   df_ranking = cargar_ranking()
 
   if not df_ranking.empty:
     st.dataframe(df_ranking, use_container_width=True)
   else:
-    st.info("Aún no hay participantes registrados.")
+    st.info("Aún no hay participantes en la tabla global.")
 
   if st.button("Volver al Inicio"):
     st.session_state.screen = "home"
