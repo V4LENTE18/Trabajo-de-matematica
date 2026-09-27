@@ -47,14 +47,6 @@ st.markdown(
         transform: scale(1.01);
     }
     
-    .info-card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 15px;
-    }
-
     .last-player-card {
         background: linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, rgba(30, 41, 59, 0.8) 100%);
         border: 1px solid #38bdf8;
@@ -73,6 +65,10 @@ st.markdown(
         display: inline-block;
         margin: 3px;
     }
+
+    .badge-diff-easy { background-color: #22c55e; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem;}
+    .badge-diff-medium { background-color: #eab308; color: black; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem;}
+    .badge-diff-hard { background-color: #ef4444; color: white; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem;}
     </style>
 """,
     unsafe_allow_html=True,
@@ -83,7 +79,6 @@ RANKING_FILE = "ranking_matematica.csv"
 
 
 def cargar_ranking():
-  """Carga la tabla de posiciones desde el archivo global persitente."""
   if os.path.exists(RANKING_FILE):
     try:
       df = pd.read_csv(RANKING_FILE)
@@ -98,7 +93,6 @@ def cargar_ranking():
 
 
 def guardar_participante(nombre, puntaje, victoria):
-  """Guarda el registro con marca de tiempo para identificar al último jugador."""
   df = cargar_ranking()
   fecha_actual = time.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -114,7 +108,6 @@ def guardar_participante(nombre, puntaje, victoria):
 
 
 def obtener_ultimo_jugador():
-  """Retorna los datos del último participante registrado."""
   df = cargar_ranking()
   if not df.empty and "FechaHora" in df.columns:
     df_ordenado_tiempo = df.sort_values(
@@ -176,9 +169,12 @@ function sfxPowerup() {
 </script>
 """
 
+# BANCO DE PREGUNTAS CON TIEMPOS ADAPTATIVOS
 QUESTION_BANK = [
     {
         "topic": "Ecuación Lineal",
+        "difficulty": "Fácil",
+        "time_limit": 30,
         "q": "Determina el valor de x:\n\n$$4(2x - 3) - 3(x + 2) = 2x + 7$$",
         "o": ["22/3", "23/3", "25/3", "27/3"],
         "a": 2,
@@ -190,6 +186,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Lineal con Fracciones",
+        "difficulty": "Media",
+        "time_limit": 45,
         "q": "Resuelve:\n\n$$\\frac{3x - 2}{4} + \\frac{x + 1}{2} = 7$$",
         "o": ["26/5", "28/5", "30/5", "32/5"],
         "a": 1,
@@ -201,6 +199,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Lineal con Paréntesis",
+        "difficulty": "Fácil",
+        "time_limit": 30,
         "q": (
             "Determina el valor de x:\n\n$$7(x - 2) - 2(3x + 1) = 4(x - 5) +"
             " 9$$"
@@ -215,6 +215,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Cuadrática",
+        "difficulty": "Fácil",
+        "time_limit": 30,
         "q": "Resuelve:\n\n$$x^2 - 9x + 20 = 0$$",
         "o": ["x = 2, 10", "x = 4, 5", "x = 3, 6", "x = -4, -5"],
         "a": 1,
@@ -225,6 +227,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Cuadrática",
+        "difficulty": "Media",
+        "time_limit": 45,
         "q": "Determina las soluciones:\n\n$$2x^2 - 7x + 3 = 0$$",
         "o": ["x = 3, 1/2", "x = 2, 3/2", "x = -3, 1/2", "x = 3, -1/2"],
         "a": 0,
@@ -236,6 +240,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Cuadrática Contextualizada",
+        "difficulty": "Difícil",
+        "time_limit": 60,
         "q": (
             "El área de un terreno rectangular es de 84 m². Su largo mide 5"
             " metros más que su ancho. ¿Cuál es el ancho del terreno?"
@@ -252,6 +258,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Fraccionaria",
+        "difficulty": "Media",
+        "time_limit": 45,
         "q": (
             "Resuelve considerando las restricciones:\n\n$$\\frac{2}{x} +"
             " \\frac{3}{x + 1} = 2$$"
@@ -268,6 +276,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Fraccionaria",
+        "difficulty": "Media",
+        "time_limit": 45,
         "q": (
             "Determina el conjunto solución:\n\n$$\\frac{x + 2}{x - 1} +"
             " \\frac{2}{x - 1} = 3$$"
@@ -282,6 +292,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Ecuación Irracional",
+        "difficulty": "Media",
+        "time_limit": 45,
         "q": "Resuelve:\n\n$$\\sqrt{x + 6} = x$$",
         "o": ["x = 2", "x = 3", "x = 4", "x = 6"],
         "a": 1,
@@ -296,6 +308,8 @@ QUESTION_BANK = [
     },
     {
         "topic": "Reto Final — Ecuación Irracional",
+        "difficulty": "Difícil",
+        "time_limit": 60,
         "q": "Determina la solución válida:\n\n$$\\sqrt{x + 4} + \\sqrt{x} = 4$$",
         "o": ["x = 1", "x = 9/4", "x = 3", "x = 4"],
         "a": 1,
@@ -387,11 +401,10 @@ def check_answer(opt_idx, timeout=False):
   st.session_state.answered = True
   q = st.session_state.questions[st.session_state.q_index]
 
-  idx = st.session_state.q_index
   base_pts = (
       100
-      if idx < 3
-      else (150 if idx < 6 else (200 if idx < 9 else 300))
+      if q["difficulty"] == "Fácil"
+      else (150 if q["difficulty"] == "Media" else 250)
   )
 
   if timeout or opt_idx != q["a"]:
@@ -440,7 +453,6 @@ st.caption("Desafío Universitario Multijugador")
 
 # PANTALLA PRINCIPAL
 if st.session_state.screen == "home":
-  # 1. METRICAS GENERALES EN VIVO
   df_rank = cargar_ranking()
   total_partidas = len(df_rank)
   max_puntaje = df_rank["Puntaje"].max() if not df_rank.empty else 0
@@ -453,7 +465,6 @@ if st.session_state.screen == "home":
 
   st.write("---")
 
-  # 2. TARJETA DEL ÚLTIMO JUGADOR
   ultimo = obtener_ultimo_jugador()
   if ultimo:
     st.markdown(
@@ -467,7 +478,6 @@ if st.session_state.screen == "home":
         unsafe_allow_html=True,
     )
 
-  # 3. REGISTRO DE JUGADOR
   st.subheader("📝 Registro de Participante")
   st.session_state.player_name = st.text_input(
       "Ingresa tu Nombre o Código para figurar en la Tabla Global:",
@@ -486,18 +496,15 @@ if st.session_state.screen == "home":
 
   st.write("---")
 
-  # 4. TEMARIO Y COMODINES
   col_left, col_right = st.columns(2)
 
   with col_left:
-    st.markdown("### 📚 Temas Evaluados")
+    st.markdown("### 📚 Temas y Dificultad")
     st.markdown(
         """
-        <span class="badge-topic">Ecuaciones Lineales</span>
-        <span class="badge-topic">Ecuaciones Cuadráticas</span>
-        <span class="badge-topic">Fracciones Algebraicas</span>
-        <span class="badge-topic">Ecuaciones Irracionales</span>
-        <span class="badge-topic">Problemas de Contexto</span>
+        <span class="badge-diff-easy">🟢 Fácil (30s)</span>
+        <span class="badge-diff-medium">🟡 Media (45s)</span>
+        <span class="badge-diff-hard">🔴 Difícil (60s)</span>
         """,
         unsafe_allow_html=True,
     )
@@ -506,17 +513,15 @@ if st.session_state.screen == "home":
     st.markdown("### 🛠️ Comodines del Juego")
     st.markdown("""
         * 🛡️ **Escudo:** Evita perder vida en un fallo.
-        * ⚡ **Congelar:** Pausa el temporizador de 20s.
+        * ⚡ **Congelar:** Pausa el temporizador.
         * 💣 **50 / 50:** Elimina 2 alternativas incorrectas.
         """)
 
-  # 5. REGLAS Y MECÁNICAS
-  with st.expander("ℹ️ ¿Cómo funciona la puntuación y las ráfagas?"):
+  with st.expander("ℹ️ ¿Cómo funciona el tiempo y las rachas?"):
     st.write("""
-        - **Tiempo por pregunta:** Tienes **20 segundos** para responder cada problema.
+        - **Tiempo dinámico:** Las preguntas fáciles te otorgan **30s**, las de nivel medio **45s** y los retos complejos **60s**.
         - **Vidas:** Inicias con **100 HP**. Cada error o tiempo agotado te restará **20 HP**.
-        - **Rachas de aciertos:** Responder consecutivamente multiplica tus puntos y hace más daño al tiempo de respuesta.
-        - **Resoluciones paso a paso:** Al contestar (correcta o incorrectamente) obtendrás la solución desarrollada con formato matemático.
+        - **Puntuación:** Responder preguntas difíciles otorga más puntos base. Mantener rachas seguidas genera multiplicadores.
         """)
 
 # PANTALLA DE JUEGO
@@ -563,7 +568,22 @@ elif st.session_state.screen == "game":
   # RENDERIZADO DE PREGUNTA Y OPCIONES
   st.divider()
   q = st.session_state.questions[st.session_state.q_index]
-  st.caption(f"Tema: **{q['topic']}**")
+
+  # ETIQUETA DE DIFICULTAD Y TIEMPO
+  diff_class = (
+      "badge-diff-easy"
+      if q["difficulty"] == "Fácil"
+      else (
+          "badge-diff-medium"
+          if q["difficulty"] == "Media"
+          else "badge-diff-hard"
+      )
+  )
+  st.markdown(
+      f"Tema: **{q['topic']}** &nbsp;|&nbsp; <span"
+      f" class='{diff_class}'>Dificultad: {q['difficulty']} ({q['time_limit']}s)</span>",
+      unsafe_allow_html=True,
+  )
   st.markdown(f"### {q['q']}")
 
   for idx, opt in enumerate(q["o"]):
@@ -575,12 +595,14 @@ elif st.session_state.screen == "game":
         check_answer(idx)
         st.rerun()
 
-  # TEMPORIZADOR
-  TIME_LIMIT = 20
+  # TEMPORIZADOR DINÁMICO POR PREGUNTA
+  TIME_LIMIT = q.get("time_limit", 30)
   if not st.session_state.answered and not st.session_state.time_freeze:
     elapsed = time.time() - st.session_state.start_time
     remaining = max(0, int(TIME_LIMIT - elapsed))
-    st.progress(remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s")
+    st.progress(
+        remaining / TIME_LIMIT, text=f"⏱️ Tiempo restante: {remaining}s"
+    )
 
     if remaining <= 0:
       check_answer(None, timeout=True)
